@@ -11,3 +11,5 @@
 * [Алексей Тимохин](https://github.com/T1m-cpp)
 * [Павел Пронин](https://github.com/proninp)
 * [Дмитрий Лушпа](https://github.com/dlushpa92)
+* [Устинов Олег]
+(https://github.com/ustik556
