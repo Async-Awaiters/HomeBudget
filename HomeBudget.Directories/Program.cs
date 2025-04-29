@@ -8,8 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHostedService<Worker>();
 
-// Заглушки для репозиториев
-//TODO заменить на AddScoped при добавлении готовых репозиториев
+// Р—Р°РіР»СѓС€РєРё РґР»СЏ СЂРµРїРѕР·РёС‚РѕСЂРёРµРІ
+//TODO Р·Р°РјРµРЅРёС‚СЊ РЅР° AddScoped РїСЂРё РґРѕР±Р°РІР»РµРЅРёРё РіРѕС‚РѕРІС‹С… СЂРµРїРѕР·РёС‚РѕСЂРёРµРІ
 builder.Services.AddSingleton<ICategoryRepository, StubCategoryRepository>();
 builder.Services.AddSingleton<ICurrencyRepository, StubCurrencyRepository>();
 
@@ -37,7 +37,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Эндпоинты для категорий
+// Р­РЅРґРїРѕРёРЅС‚С‹ РґР»СЏ РєР°С‚РµРіРѕСЂРёР№
 app.MapGet("/api/categories", async (ICategoryRepository repository) =>
 {
     var categories = await repository.GetAllAsync();
@@ -52,7 +52,7 @@ app.MapGet("/api/categories/{id:guid}", async (Guid id, ICategoryRepository repo
 
 app.MapPost("/api/categories", async (Category category, ICategoryRepository repository) =>
 {
-    // Генерация нового Guid если не указан
+    // Р“РµРЅРµСЂР°С†РёСЏ РЅРѕРІРѕРіРѕ Guid РµСЃР»Рё РЅРµ СѓРєР°Р·Р°РЅ
     category = category with { Id = category.Id == Guid.Empty ? Guid.NewGuid() : category.Id };
     await repository.AddAsync(category);
     return Results.Created($"/api/categories/{category.Id}", category);
@@ -73,7 +73,7 @@ app.MapDelete("/api/categories/{id:guid}", async (Guid id, ICategoryRepository r
     return Results.NoContent();
 });
 
-// Эндпоинты для валют
+// Р­РЅРґРїРѕРёРЅС‚С‹ РґР»СЏ РІР°Р»СЋС‚
 app.MapGet("/api/currencies", async (ICurrencyRepository repository) =>
 {
     var currencies = await repository.GetAllAsync();
@@ -88,12 +88,12 @@ app.MapGet("/api/currencies/{id:guid}", async (Guid id, ICurrencyRepository repo
 
 app.Run();
 
-//Тестовые модели и репозитории
-//TODO Заменить на готовые репозитории
+//РўРµСЃС‚РѕРІС‹Рµ РјРѕРґРµР»Рё Рё СЂРµРїРѕР·РёС‚РѕСЂРёРё
+//TODO Р—Р°РјРµРЅРёС‚СЊ РЅР° РіРѕС‚РѕРІС‹Рµ СЂРµРїРѕР·РёС‚РѕСЂРёРё
 public record Category(Guid Id, string Name, string Description);
 public record Currency(Guid Id, string Code, string Name);
 
-// Интерфейсы репозиториев
+// РРЅС‚РµСЂС„РµР№СЃС‹ СЂРµРїРѕР·РёС‚РѕСЂРёРµРІ
 public interface ICategoryRepository
 {
     Task<IEnumerable<Category>> GetAllAsync();
@@ -109,7 +109,7 @@ public interface ICurrencyRepository
     Task<Currency?> GetByIdAsync(Guid id);
 }
 
-// Заглушки для репозиториев
+// Р—Р°РіР»СѓС€РєРё РґР»СЏ СЂРµРїРѕР·РёС‚РѕСЂРёРµРІ
 public class StubCategoryRepository : ICategoryRepository
 {
     private readonly List<Category> _categories = new()
