@@ -10,7 +10,7 @@ public class DirectoriesContext : DbContext
 {
 
     public DbSet<Categories> Categories { get; set; }
-    public DbSet<Currency> Сurrencies { get; set; }
+    public DbSet<Currency> Currency { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -19,6 +19,15 @@ public class DirectoriesContext : DbContext
                         .SetBasePath(Directory.GetCurrentDirectory())
                         .Build();
 
-        options.UseNpgsql(config.GetConnectionString("DefaultConnection"));
+        options.UseNpgsql(config.GetConnectionString("postgreSQL"));
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Categories>(entity =>
+        {
+            entity.Property(e => e.Id)
+                  .HasDefaultValueSql("gen_random_uuid()");
+        });
     }
 }

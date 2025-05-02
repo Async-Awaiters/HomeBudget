@@ -1,9 +1,10 @@
 ﻿using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace HomeBudget.Directories.EF.DAL
 {
-    public class CurrencyRepository: IRepository<Currency>
+    public class CurrencyRepository: IGetRepository<Currency>, ICreateRepository<Currency>, IUpdateRepository<Currency>
     {
         private readonly DirectoriesContext _context;
         public CurrencyRepository(DirectoriesContext context) 
@@ -11,38 +12,26 @@ namespace HomeBudget.Directories.EF.DAL
             this._context = new DirectoriesContext();
         }
 
-        public IEnumerable<Currency> GetAll()
+        public async Task<IEnumerable<Currency>> GetAll()
         {
-            return _context.Сurrencies;
+            return await _context.Currency.ToListAsync();
         }
 
-        public Currency GetById(Guid id)
+        public async Task<Currency> GetById(Guid id)
         {
-            return _context.Сurrencies.Find(id);
+            return await _context.Currency.FirstOrDefaultAsync(currency => currency.Id == id);
         }
 
-        public void Create(Currency currency)
+        public async Task Create(Currency currency)
         {
-            _context.Сurrencies.Add(currency);
+            await _context.Currency.AddAsync(currency);
+            await _context.SaveChangesAsync();
         }
 
-        public void Delete(Guid id)
-        {
-            var currency = _context.Сurrencies.Find(id);
-            if (currency != null) 
-            {
-                _context.Сurrencies.Remove(currency);
-            }
-        }
-
-        public void Update(Currency currency) 
+        public async Task Update(Currency currency) 
         {
             _context.Entry(currency).State = EntityState.Modified;
-        }
-
-        public void Save()
-        {
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
         public void Dispose()

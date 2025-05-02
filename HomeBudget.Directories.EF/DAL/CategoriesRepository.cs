@@ -1,12 +1,12 @@
 ﻿using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Threading;
 
 
 namespace HomeBudget.Directories.EF.DAL
 {
-
-    public class CategoriesRepository : IRepository<Categories>
+    public class CategoriesRepository : IGetRepository<Categories>, ICreateRepository<Categories>, IDeleteRepository<Categories>, IUpdateRepository<Categories>
     {
         private readonly DirectoriesContext _context;
         public CategoriesRepository(DirectoriesContext context)
@@ -14,38 +14,38 @@ namespace HomeBudget.Directories.EF.DAL
             this._context = new DirectoriesContext();
         }
 
-        public IEnumerable<Categories> GetAll()
+        public async Task<IEnumerable<Categories>> GetAll()
         {
-            return _context.Categories;
+            return await _context.Categories.Where(category => !category.IsDeleted).ToListAsync();
         }
 
-        public Categories GetById(Guid id)
+        public async Task<Categories> GetById(Guid id)
         {
-            return _context.Categories.Find(id);
+            var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id);
+            return !category.IsDeleted ? category : null;
         }
 
-        public void Create(Categories category)
+        public async Task Create(Categories category)
         {
-            _context.Categories.Add(category);
+           
+            await _context.Categories.AddAsync(category);
+            await _context.SaveChangesAsync();
         }
 
-        public void Delete(Guid id)
+        public async Task Delete(Guid id)
         {
-            var category = _context.Categories.Find(id);
+            var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id);
             if (category != null)
             {
-                _context.Categories.Remove(category);
+                category.IsDeleted = true;
+                await _context.SaveChangesAsync();
             }
         }
 
-        public void Update(Categories category)
+        public async Task Update(Categories category)
         {
             _context.Entry(category).State = EntityState.Modified;
-        }
-
-        public void Save()
-        {
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
         public void Dispose()
