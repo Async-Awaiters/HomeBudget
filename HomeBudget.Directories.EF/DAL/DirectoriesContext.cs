@@ -3,14 +3,12 @@ using Microsoft.Extensions.Options;
 using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.Extensions.Configuration;
 
-
 namespace HomeBudget.Directories.EF.DAL;
 
 public class DirectoriesContext : DbContext
 {
-
     public DbSet<Categories> Categories { get; set; }
-    public DbSet<Currency> Currency { get; set; }
+    public DbSet<Currency> Сurrencies { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HomeBudget.Directories.EF.DAL
 {
-    public interface IDeleteRepository<TEntity> : IDisposable where TEntity : class
+    public interface IDeleteRepository<TEntity> : IDisposable
     {
         Task Delete(Guid id);
     }

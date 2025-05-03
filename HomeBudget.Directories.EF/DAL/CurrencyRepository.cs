@@ -14,17 +14,17 @@ namespace HomeBudget.Directories.EF.DAL
 
         public async Task<IEnumerable<Currency>> GetAll()
         {
-            return await _context.Currency.ToListAsync();
+            return await _context.Сurrencies.ToListAsync();
         }
 
         public async Task<Currency> GetById(Guid id)
         {
-            return await _context.Currency.FirstOrDefaultAsync(currency => currency.Id == id);
+            return await _context.Сurrencies.FirstOrDefaultAsync(currency => currency.Id == id);
         }
 
         public async Task Create(Currency currency)
         {
-            await _context.Currency.AddAsync(currency);
+            await _context.Сurrencies.AddAsync(currency);
             await _context.SaveChangesAsync();
         }
 

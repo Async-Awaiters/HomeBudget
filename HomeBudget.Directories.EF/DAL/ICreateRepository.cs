@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HomeBudget.Directories.EF.DAL
 {
-    public interface ICreateRepository<TEntity> : IDisposable where TEntity : class
+    public interface ICreateRepository<TEntity> : IDisposable
     {
         Task Create(TEntity entity);
     }

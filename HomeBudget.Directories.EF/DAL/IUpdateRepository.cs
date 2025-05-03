@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HomeBudget.Directories.EF.DAL
 {
-    public interface IUpdateRepository<TEntity> : IDisposable where TEntity : class
+    public interface IUpdateRepository<TEntity> : IDisposable
     {
         Task Update(TEntity entity);
     }

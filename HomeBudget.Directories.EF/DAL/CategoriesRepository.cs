@@ -3,12 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading;
 
-
 namespace HomeBudget.Directories.EF.DAL
 {
     public class CategoriesRepository : IGetRepository<Categories>, ICreateRepository<Categories>, IDeleteRepository<Categories>, IUpdateRepository<Categories>
     {
         private readonly DirectoriesContext _context;
+
         public CategoriesRepository(DirectoriesContext context)
         {
             this._context = new DirectoriesContext();
