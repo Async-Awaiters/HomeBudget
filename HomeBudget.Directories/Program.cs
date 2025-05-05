@@ -57,7 +57,10 @@ app.UseHttpsRedirection();
 
 // Эндпоинты для категорий
 app.MapGet("/api/categories", async (ICategoryService service, CancellationToken ct) =>
-    TypedResults.Ok(await service.GetAllCategoriesAsync(ct)));
+{
+    var categories = await service.GetAllCategoriesAsync(ct);
+    return TypedResults.Ok(categories ?? Array.Empty<Category>()); // Явно возвращаем пустой массив
+});
 
 app.MapGet("/api/category/{id:guid}",
     async Task<Results<Ok<Category>, NotFound>>
@@ -83,11 +86,8 @@ app.MapPut("/api/category/{id:guid}", async (
     ICategoryService service,
     CancellationToken ct) =>
 {
-    if (id != category.Id)
-        return Results.BadRequest("ID mismatch");
-
     await service.UpdateCategoryAsync(category, ct);
-    return Results.NoContent();
+    return TypedResults.NoContent();
 });
 
 app.MapDelete("/api/category/{id:guid}", async (
@@ -96,7 +96,7 @@ app.MapDelete("/api/category/{id:guid}", async (
     CancellationToken ct) =>
 {
     await service.DeleteCategoryAsync(id, ct);
-    return Results.NoContent();
+    return TypedResults.NoContent();
 });
 
 app.MapGet("/api/currencies", async (

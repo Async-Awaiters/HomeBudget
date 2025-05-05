@@ -32,7 +32,7 @@ public class CategoryService : ICategoryService
     public async Task<Category> CreateCategoryAsync(Category category, CancellationToken ct)
     {
         _logger.LogInformation("Creating new category");
-        category = category with { Id = Guid.NewGuid() };
+        category = category with { Id = Guid.NewGuid() }; //временно
         await _repository.AddAsync(category, ct);
         return category;
     }
