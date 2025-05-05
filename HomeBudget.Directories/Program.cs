@@ -1,17 +1,26 @@
 using HomeBudget.Directories;
+using HomeBudget.Directories.Data.Interfaces;
+using HomeBudget.Directories.Data.Models;
+using HomeBudget.Directories.Data.Repositories;
+using HomeBudget.Directories.Services.Implementations;
+using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHostedService<Worker>();
 
-// Заглушки для репозиториев
-//TODO заменить на AddScoped при добавлении готовых репозиториев
-builder.Services.AddSingleton<ICategoryRepository, StubCategoryRepository>();
-builder.Services.AddSingleton<ICurrencyRepository, StubCurrencyRepository>();
+// Регистрация сервисов
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ICurrencyService, CurrencyService>();
+
+// Регистрация заглушек репозиториев
+builder.Services.AddScoped<ICategoryRepository, StubCategoryRepository>();
+builder.Services.AddScoped<ICurrencyRepository, StubCurrencyRepository>();
 
 if (builder.Environment.IsDevelopment())
 {
@@ -31,131 +40,83 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwagger(options =>
+    {
+        options.RouteTemplate = "/openapi/{documentName}.json";
+    });
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "HomeBudget API";
+        options.ShowSidebar = true;
+    });
 }
 
 app.UseHttpsRedirection();
 
 // Эндпоинты для категорий
-app.MapGet("/api/categories", async (ICategoryRepository repository) =>
+app.MapGet("/api/categories", async (
+    ICategoryService service,
+    CancellationToken ct) =>
 {
-    var categories = await repository.GetAllAsync();
-    return Results.Json(categories);
+    var categories = await service.GetAllCategoriesAsync(ct);
+    return Results.Ok(categories);
 });
 
-app.MapGet("/api/categories/{id:guid}", async (Guid id, ICategoryRepository repository) =>
+app.MapGet("/api/category/{id:guid}", async (
+    Guid id,
+    ICategoryService service,
+    CancellationToken ct) =>
 {
-    var category = await repository.GetByIdAsync(id);
-    return category is not null ? Results.Json(category) : Results.NotFound();
+    var category = await service.GetCategoryByIdAsync(id, ct);
+    return category is not null ? Results.Ok(category) : Results.NotFound();
 });
 
-app.MapPost("/api/categories", async (Category category, ICategoryRepository repository) =>
+app.MapPost("/api/category", async (
+    Category category,
+    ICategoryService service,
+    CancellationToken ct) =>
 {
-    // Генерация нового Guid если не указан
-    category = category with { Id = category.Id == Guid.Empty ? Guid.NewGuid() : category.Id };
-    await repository.AddAsync(category);
-    return Results.Created($"/api/categories/{category.Id}", category);
+    var createdCategory = await service.CreateCategoryAsync(category, ct);
+    return Results.Created($"/api/category/{createdCategory.Id}", createdCategory);
 });
 
-app.MapPut("/api/categories/{id:guid}", async (Guid id, Category category, ICategoryRepository repository) =>
+app.MapPut("/api/category/{id:guid}", async (
+    Guid id,
+    Category category,
+    ICategoryService service,
+    CancellationToken ct) =>
 {
     if (id != category.Id)
         return Results.BadRequest("ID mismatch");
 
-    await repository.UpdateAsync(category);
+    await service.UpdateCategoryAsync(category, ct);
     return Results.NoContent();
 });
 
-app.MapDelete("/api/categories/{id:guid}", async (Guid id, ICategoryRepository repository) =>
+app.MapDelete("/api/category/{id:guid}", async (
+    Guid id,
+    ICategoryService service,
+    CancellationToken ct) =>
 {
-    await repository.DeleteAsync(id);
+    await service.DeleteCategoryAsync(id, ct);
     return Results.NoContent();
 });
 
-// Эндпоинты для валют
-app.MapGet("/api/currencies", async (ICurrencyRepository repository) =>
+app.MapGet("/api/currencies", async (
+    ICurrencyService service,
+    CancellationToken ct) =>
 {
-    var currencies = await repository.GetAllAsync();
-    return Results.Json(currencies);
+    var currencies = await service.GetAllCurrenciesAsync(ct);
+    return TypedResults.Ok(currencies);
 });
 
-app.MapGet("/api/currencies/{id:guid}", async (Guid id, ICurrencyRepository repository) =>
+app.MapGet("/api/currency/{id:guid}", async (
+    Guid id,
+    ICurrencyService service,
+    CancellationToken ct) =>
 {
-    var currency = await repository.GetByIdAsync(id);
-    return currency is not null ? Results.Json(currency) : Results.NotFound();
+    var currency = await service.GetCurrencyByIdAsync(id, ct);
+    return currency is not null ? Results.Ok(currency) : Results.NotFound();
 });
 
 app.Run();
-
-//Тестовые модели и репозитории
-//TODO Заменить на готовые репозитории
-public record Category(Guid Id, string Name, string Description);
-public record Currency(Guid Id, string Code, string Name);
-
-// Интерфейсы репозиториев
-public interface ICategoryRepository
-{
-    Task<IEnumerable<Category>> GetAllAsync();
-    Task<Category?> GetByIdAsync(Guid id);
-    Task AddAsync(Category category);
-    Task UpdateAsync(Category category);
-    Task DeleteAsync(Guid id);
-}
-
-public interface ICurrencyRepository
-{
-    Task<IEnumerable<Currency>> GetAllAsync();
-    Task<Currency?> GetByIdAsync(Guid id);
-}
-
-// Заглушки для репозиториев
-public class StubCategoryRepository : ICategoryRepository
-{
-    private readonly List<Category> _categories = new()
-    {
-        new Category(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Food", "Groceries and dining out"),
-        new Category(Guid.Parse("22222222-2222-2222-2222-222222222222"), "Transport", "Public transport and taxis"),
-        new Category(Guid.Parse("33333333-3333-3333-3333-333333333333"), "Utilities", "Bills for housing utilities")
-    };
-
-    public Task<IEnumerable<Category>> GetAllAsync() => Task.FromResult<IEnumerable<Category>>(_categories);
-
-    public Task<Category?> GetByIdAsync(Guid id) => Task.FromResult(_categories.FirstOrDefault(c => c.Id == id));
-
-    public Task AddAsync(Category category)
-    {
-        _categories.Add(category);
-        return Task.CompletedTask;
-    }
-
-    public Task UpdateAsync(Category category)
-    {
-        var index = _categories.FindIndex(c => c.Id == category.Id);
-        if (index >= 0)
-        {
-            _categories[index] = category;
-        }
-        return Task.CompletedTask;
-    }
-
-    public Task DeleteAsync(Guid id)
-    {
-        _categories.RemoveAll(c => c.Id == id);
-        return Task.CompletedTask;
-    }
-}
-
-public class StubCurrencyRepository : ICurrencyRepository
-{
-    private readonly List<Currency> _currencies = new()
-    {
-        new Currency(Guid.Parse("44444444-4444-4444-4444-444444444444"), "USD", "US Dollar"),
-        new Currency(Guid.Parse("55555555-5555-5555-5555-555555555555"), "EUR", "Euro"),
-        new Currency(Guid.Parse("66666666-6666-6666-6666-666666666666"), "GBP", "British Pound")
-    };
-
-    public Task<IEnumerable<Currency>> GetAllAsync() => Task.FromResult<IEnumerable<Currency>>(_currencies);
-
-    public Task<Currency?> GetByIdAsync(Guid id) => Task.FromResult(_currencies.FirstOrDefault(c => c.Id == id));
-}
