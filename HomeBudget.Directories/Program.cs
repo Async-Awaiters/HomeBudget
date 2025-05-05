@@ -6,9 +6,11 @@ using HomeBudget.Directories.Services.Implementations;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using Swashbuckle.AspNetCore.SwaggerGen;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,31 +56,26 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Эндпоинты для категорий
-app.MapGet("/api/categories", async (
-    ICategoryService service,
-    CancellationToken ct) =>
-{
-    var categories = await service.GetAllCategoriesAsync(ct);
-    return Results.Ok(categories);
-});
+app.MapGet("/api/categories", async (ICategoryService service, CancellationToken ct) =>
+    TypedResults.Ok(await service.GetAllCategoriesAsync(ct)));
 
-app.MapGet("/api/category/{id:guid}", async (
-    Guid id,
-    ICategoryService service,
-    CancellationToken ct) =>
-{
-    var category = await service.GetCategoryByIdAsync(id, ct);
-    return category is not null ? Results.Ok(category) : Results.NotFound();
-});
+app.MapGet("/api/category/{id:guid}",
+    async Task<Results<Ok<Category>, NotFound>>
+        (Guid id, ICategoryService service, CancellationToken ct) =>
+    {
+        var category = await service.GetCategoryByIdAsync(id, ct);
+        return category is not null
+            ? TypedResults.Ok(category)
+            : TypedResults.NotFound();
+    });
 
-app.MapPost("/api/category", async (
-    Category category,
-    ICategoryService service,
-    CancellationToken ct) =>
-{
-    var createdCategory = await service.CreateCategoryAsync(category, ct);
-    return Results.Created($"/api/category/{createdCategory.Id}", createdCategory);
-});
+app.MapPost("/api/category",
+    async Task<Results<Created<Category>, ValidationProblem>>
+        (Category category, ICategoryService service, CancellationToken ct) =>
+    {
+        var createdCategory = await service.CreateCategoryAsync(category, ct);
+        return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
+    });
 
 app.MapPut("/api/category/{id:guid}", async (
     Guid id,
@@ -110,13 +107,14 @@ app.MapGet("/api/currencies", async (
     return TypedResults.Ok(currencies);
 });
 
-app.MapGet("/api/currency/{id:guid}", async (
-    Guid id,
-    ICurrencyService service,
-    CancellationToken ct) =>
-{
-    var currency = await service.GetCurrencyByIdAsync(id, ct);
-    return currency is not null ? Results.Ok(currency) : Results.NotFound();
-});
+app.MapGet("/api/currency/{id:guid}",
+    async Task<Results<Ok<Currency>, NotFound>>
+        (Guid id, ICurrencyService service, CancellationToken ct) =>
+    {
+        var currency = await service.GetCurrencyByIdAsync(id, ct);
+        return currency is not null
+            ? TypedResults.Ok(currency)
+            : TypedResults.NotFound();
+    });
 
 app.Run();
