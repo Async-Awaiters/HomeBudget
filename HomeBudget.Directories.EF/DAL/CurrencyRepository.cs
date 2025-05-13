@@ -1,10 +1,11 @@
-﻿using HomeBudget.Directories.EF.DAL.Models;
+﻿using HomeBudget.Directories.EF.DAL.Interfaces;
+using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
 
 namespace HomeBudget.Directories.EF.DAL
 {
-    public class CurrencyRepository: IGetRepository<Currency>, ICreateRepository<Currency>, IUpdateRepository<Currency>
+    public class CurrencyRepository: ICurrencyRepository
     {
         private readonly DirectoriesContext _context;
         public CurrencyRepository(DirectoriesContext context) 
@@ -12,9 +13,11 @@ namespace HomeBudget.Directories.EF.DAL
             this._context = new DirectoriesContext();
         }
 
-        public async Task<IEnumerable<Currency>> GetAll()
+        public async Task<List<Currency>> GetAll()
         {
-            return await _context.Сurrencies.ToListAsync();
+            IQueryable<Currency> query = _context.Сurrencies.AsNoTracking();
+
+            return await query.ToListAsync();
         }
 
         public async Task<Currency> GetById(Guid id)
@@ -24,14 +27,24 @@ namespace HomeBudget.Directories.EF.DAL
 
         public async Task Create(Currency currency)
         {
+            var currencyDb = _context.Сurrencies.AnyAsync(cur => String.Equals(cur.Name, currency.Name) && String.Equals(cur.Code, currency.Code) && String.Equals(cur.Country, cur.Country));
+            if (currencyDb.Result)
+            {
+                throw new Exception("Нет такой валюты");
+            }
+
             await _context.Сurrencies.AddAsync(currency);
             await _context.SaveChangesAsync();
         }
 
         public async Task Update(Currency currency) 
         {
-            _context.Entry(currency).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            var currencyBD = await _context.Сurrencies.FindAsync(currency.Id);
+            if (currencyBD != null)
+            {
+                _context.Entry(currencyBD).CurrentValues.SetValues(currency);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public void Dispose()

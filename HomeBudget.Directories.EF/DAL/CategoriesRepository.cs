@@ -1,11 +1,13 @@
-﻿using HomeBudget.Directories.EF.DAL.Models;
+﻿using HomeBudget.Directories.EF.DAL.Interfaces;
+using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq;
 using System.Threading;
 
 namespace HomeBudget.Directories.EF.DAL
 {
-    public class CategoriesRepository : IGetRepository<Categories>, ICreateRepository<Categories>, IDeleteRepository<Categories>, IUpdateRepository<Categories>
+    public class CategoriesRepository : ICategoriesRepository
     {
         private readonly DirectoriesContext _context;
 
@@ -14,9 +16,11 @@ namespace HomeBudget.Directories.EF.DAL
             this._context = new DirectoriesContext();
         }
 
-        public async Task<IEnumerable<Categories>> GetAll()
+        public async Task<List<Categories>> GetAll()
         {
-            return await _context.Categories.Where(category => !category.IsDeleted).ToListAsync();
+            IQueryable<Categories> query = _context.Categories.AsNoTracking().Where(category => !category.IsDeleted);
+            
+            return await query.ToListAsync();
         }
 
         public async Task<Categories> GetById(Guid id)
@@ -27,7 +31,12 @@ namespace HomeBudget.Directories.EF.DAL
 
         public async Task Create(Categories category)
         {
-           
+            var currencyDb = _context.Categories.AnyAsync(x => String.Equals(x.Name, category.Name) && String.Equals(x.ParentId, category.ParentId) && String.Equals(x.UserId, category.UserId));
+            if (currencyDb.Result)
+            {
+                throw new Exception("Нет такой категории");
+            }
+
             await _context.Categories.AddAsync(category);
             await _context.SaveChangesAsync();
         }
@@ -44,8 +53,12 @@ namespace HomeBudget.Directories.EF.DAL
 
         public async Task Update(Categories category)
         {
-            _context.Entry(category).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            var categoryBD = await _context.Categories.FindAsync(category.Id);
+            if (categoryBD != null)
+            {
+                _context.Entry(categoryBD).CurrentValues.SetValues(category);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public void Dispose()

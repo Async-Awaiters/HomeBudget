@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HomeBudget.Directories.EF.DAL
+namespace HomeBudget.Directories.EF.DAL.Interfaces
 {
-    public interface IGetRepository<TEntity> : IDisposable
+    public interface IGetRepository<TEntity>
     {
-        Task<IEnumerable<TEntity>> GetAll();
+        Task<List<TEntity>> GetAll();
         Task<TEntity> GetById(Guid id);
     }
 }

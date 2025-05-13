@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HomeBudget.Directories.EF.DAL
+namespace HomeBudget.Directories.EF.DAL.Interfaces
 {
-    public interface ICreateRepository<TEntity> : IDisposable
+    public interface ICreateRepository<TEntity>
     {
         Task Create(TEntity entity);
     }
