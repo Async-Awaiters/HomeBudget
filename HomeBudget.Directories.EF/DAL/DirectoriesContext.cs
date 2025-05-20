@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.Extensions.Configuration;
+using System.Xml.Linq;
 
 namespace HomeBudget.Directories.EF.DAL;
 
@@ -22,10 +23,6 @@ public class DirectoriesContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Categories>(entity =>
-        {
-            entity.Property(e => e.Id)
-                  .HasDefaultValueSql("gen_random_uuid()");
-        });
+        modelBuilder.Entity<Categories>().Property(x => x.Id).HasDefaultValueSql("NEWID()");
     }
 }

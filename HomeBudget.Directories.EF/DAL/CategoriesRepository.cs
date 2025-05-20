@@ -16,20 +16,20 @@ namespace HomeBudget.Directories.EF.DAL
             this._context = new DirectoriesContext();
         }
 
-        public async Task<List<Categories>> GetAll()
+        public async Task<IQueryable<Categories>> GetAll(CancellationToken cancellationToken)
         {
-            IQueryable<Categories> query = _context.Categories.AsNoTracking().Where(category => !category.IsDeleted);
+            var query = _context.Categories.Where(category => !category.IsDeleted);
             
-            return await query.ToListAsync();
+            return query;
         }
 
-        public async Task<Categories> GetById(Guid id)
+        public async Task<Categories> GetById(Guid id, CancellationToken cancellationToken)
         {
             var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id);
             return !category.IsDeleted ? category : null;
         }
 
-        public async Task Create(Categories category)
+        public async Task Create(Categories category, CancellationToken cancellationToken)
         {
             var currencyDb = _context.Categories.AnyAsync(x => String.Equals(x.Name, category.Name) && String.Equals(x.ParentId, category.ParentId) && String.Equals(x.UserId, category.UserId));
             if (currencyDb.Result)
@@ -41,7 +41,7 @@ namespace HomeBudget.Directories.EF.DAL
             await _context.SaveChangesAsync();
         }
 
-        public async Task Delete(Guid id)
+        public async Task Delete(Guid id, CancellationToken cancellationToken)
         {
             var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id);
             if (category != null)
@@ -51,7 +51,7 @@ namespace HomeBudget.Directories.EF.DAL
             }
         }
 
-        public async Task Update(Categories category)
+        public async Task Update(Categories category, CancellationToken cancellationToken)
         {
             var categoryBD = await _context.Categories.FindAsync(category.Id);
             if (categoryBD != null)

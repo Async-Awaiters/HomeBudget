@@ -13,19 +13,19 @@ namespace HomeBudget.Directories.EF.DAL
             this._context = new DirectoriesContext();
         }
 
-        public async Task<List<Currency>> GetAll()
+        public async Task<IQueryable<Currency>> GetAll(CancellationToken cancellationToken)
         {
             IQueryable<Currency> query = _context.Сurrencies.AsNoTracking();
 
-            return await query.ToListAsync();
+            return query;
         }
 
-        public async Task<Currency> GetById(Guid id)
+        public async Task<Currency> GetById(Guid id, CancellationToken cancellationToken)
         {
             return await _context.Сurrencies.FirstOrDefaultAsync(currency => currency.Id == id);
         }
 
-        public async Task Create(Currency currency)
+        public async Task Create(Currency currency, CancellationToken cancellationToken)
         {
             var currencyDb = _context.Сurrencies.AnyAsync(cur => String.Equals(cur.Name, currency.Name) && String.Equals(cur.Code, currency.Code) && String.Equals(cur.Country, cur.Country));
             if (currencyDb.Result)
@@ -37,7 +37,7 @@ namespace HomeBudget.Directories.EF.DAL
             await _context.SaveChangesAsync();
         }
 
-        public async Task Update(Currency currency) 
+        public async Task Update(Currency currency, CancellationToken cancellationToken) 
         {
             var currencyBD = await _context.Сurrencies.FindAsync(currency.Id);
             if (currencyBD != null)

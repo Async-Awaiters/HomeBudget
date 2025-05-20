@@ -8,7 +8,7 @@ namespace HomeBudget.Directories.EF.DAL.Interfaces
 {
     public interface IGetRepository<TEntity>
     {
-        Task<List<TEntity>> GetAll();
-        Task<TEntity> GetById(Guid id);
+        Task<IQueryable<TEntity>> GetAll(CancellationToken cancellationToken);
+        Task<TEntity> GetById(Guid id, CancellationToken cancellationToken);
     }
 }
