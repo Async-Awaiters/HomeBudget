@@ -4,9 +4,9 @@ namespace HomeBudget.Directories.Services.Interfaces;
 
 public interface ICategoryService
 {
-    Task<IEnumerable<Category>> GetAllCategoriesAsync(CancellationToken ct);
-    Task<Category?> GetCategoryByIdAsync(Guid id, CancellationToken ct);
-    Task<Category> CreateCategoryAsync(Category category, CancellationToken ct);
-    Task UpdateCategoryAsync(Category category, CancellationToken ct);
-    Task DeleteCategoryAsync(Guid id, CancellationToken ct);
+    Task<IEnumerable<Category>> GetAllCategoriesAsync();
+    Task<Category?> GetCategoryByIdAsync(Guid id);
+    Task<Category> CreateCategoryAsync(Category category);
+    Task UpdateCategoryAsync(Category category);
+    Task DeleteCategoryAsync(Guid id);
 }

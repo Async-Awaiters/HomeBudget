@@ -24,6 +24,13 @@ builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 builder.Services.AddScoped<ICategoryRepository, StubCategoryRepository>();
 builder.Services.AddScoped<ICurrencyRepository, StubCurrencyRepository>();
 
+builder.Services.AddOptions<ServiceTimeoutsOptions>()
+    .Bind(builder.Configuration.GetSection("Services:Timeouts"))
+    .Validate(x => x.CategoryService > 0, "CategoryService timeout must be positive")
+    .Validate(x => x.CurrencyService > 0, "CurrencyService timeout must be positive")
+    .Validate(x => x.CategoryService <= 60_000, "CategoryService timeout too long")
+    .Validate(x => x.CurrencyService <= 60_000, "CurrencyService timeout too long");
+
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddEndpointsApiExplorer();
@@ -56,17 +63,17 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Эндпоинты для категорий
-app.MapGet("/api/categories", async (ICategoryService service, CancellationToken ct) =>
+app.MapGet("/api/categories", async (ICategoryService service) =>
 {
-    var categories = await service.GetAllCategoriesAsync(ct);
+    var categories = await service.GetAllCategoriesAsync();
     return TypedResults.Ok(categories ?? Array.Empty<Category>()); // Явно возвращаем пустой массив
 });
 
 app.MapGet("/api/category/{id:guid}",
     async Task<Results<Ok<Category>, NotFound>>
-        (Guid id, ICategoryService service, CancellationToken ct) =>
+        (Guid id, ICategoryService service) =>
     {
-        var category = await service.GetCategoryByIdAsync(id, ct);
+        var category = await service.GetCategoryByIdAsync(id);
         return category is not null
             ? TypedResults.Ok(category)
             : TypedResults.NotFound();
@@ -74,44 +81,41 @@ app.MapGet("/api/category/{id:guid}",
 
 app.MapPost("/api/category",
     async Task<Results<Created<Category>, ValidationProblem>>
-        (Category category, ICategoryService service, CancellationToken ct) =>
+        (Category category, ICategoryService service) =>
     {
-        var createdCategory = await service.CreateCategoryAsync(category, ct);
+        var createdCategory = await service.CreateCategoryAsync(category);
         return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
     });
 
 app.MapPut("/api/category/{id:guid}", async (
     Guid id,
     Category category,
-    ICategoryService service,
-    CancellationToken ct) =>
+    ICategoryService service) =>
 {
-    await service.UpdateCategoryAsync(category, ct);
+    await service.UpdateCategoryAsync(category);
     return TypedResults.NoContent();
 });
 
 app.MapDelete("/api/category/{id:guid}", async (
     Guid id,
-    ICategoryService service,
-    CancellationToken ct) =>
+    ICategoryService service) =>
 {
-    await service.DeleteCategoryAsync(id, ct);
+    await service.DeleteCategoryAsync(id);
     return TypedResults.NoContent();
 });
 
 app.MapGet("/api/currencies", async (
-    ICurrencyService service,
-    CancellationToken ct) =>
+    ICurrencyService service) =>
 {
-    var currencies = await service.GetAllCurrenciesAsync(ct);
+    var currencies = await service.GetAllCurrenciesAsync();
     return TypedResults.Ok(currencies);
 });
 
 app.MapGet("/api/currency/{id:guid}",
     async Task<Results<Ok<Currency>, NotFound>>
-        (Guid id, ICurrencyService service, CancellationToken ct) =>
+        (Guid id, ICurrencyService service) =>
     {
-        var currency = await service.GetCurrencyByIdAsync(id, ct);
+        var currency = await service.GetCurrencyByIdAsync(id);
         return currency is not null
             ? TypedResults.Ok(currency)
             : TypedResults.NotFound();
