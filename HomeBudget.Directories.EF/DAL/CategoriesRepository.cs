@@ -13,7 +13,7 @@ namespace HomeBudget.Directories.EF.DAL
 
         public CategoriesRepository(DirectoriesContext context)
         {
-            this._context = new DirectoriesContext();
+            this._context = context;
         }
 
         public async Task<IQueryable<Categories>> GetAll(CancellationToken cancellationToken)

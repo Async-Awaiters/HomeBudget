@@ -10,7 +10,7 @@ namespace HomeBudget.Directories.EF.DAL
         private readonly DirectoriesContext _context;
         public CurrencyRepository(DirectoriesContext context) 
         {
-            this._context = new DirectoriesContext();
+            this._context = context;
         }
 
         public async Task<IQueryable<Currency>> GetAll(CancellationToken cancellationToken)

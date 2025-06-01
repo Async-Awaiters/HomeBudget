@@ -1,7 +1,4 @@
 using HomeBudget.Directories;
-using HomeBudget.Directories.Data.Interfaces;
-using HomeBudget.Directories.Data.Models;
-using HomeBudget.Directories.Data.Repositories;
 using HomeBudget.Directories.Services.Implementations;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
@@ -10,19 +7,25 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using Swashbuckle.AspNetCore.SwaggerGen;
-
+using HomeBudget.Directories.EF.DAL.Interfaces;
+using HomeBudget.Directories.EF.DAL;
+using HomeBudget.Directories.EF.DAL.Models;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHostedService<Worker>();
+
+builder.Services.AddDbContext<DirectoriesContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("postgreSQL")));
 
 // Регистрация сервисов
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 
 // Регистрация заглушек репозиториев
-builder.Services.AddScoped<ICategoryRepository, StubCategoryRepository>();
-builder.Services.AddScoped<ICurrencyRepository, StubCurrencyRepository>();
+builder.Services.AddScoped<ICategoriesRepository, CategoriesRepository>();
+builder.Services.AddScoped<ICurrencyRepository, CurrencyRepository>();
 
 builder.Services.AddOptions<ServiceTimeoutsOptions>()
     .Bind(builder.Configuration.GetSection("Services:Timeouts"))
@@ -66,11 +69,11 @@ app.UseHttpsRedirection();
 app.MapGet("/api/categories", async (ICategoryService service) =>
 {
     var categories = await service.GetAllCategoriesAsync();
-    return TypedResults.Ok(categories ?? Array.Empty<Category>()); // Явно возвращаем пустой массив
+    return TypedResults.Ok(categories ?? Enumerable.Empty<Categories>()); // Явно возвращаем пустой массив
 });
 
 app.MapGet("/api/category/{id:guid}",
-    async Task<Results<Ok<Category>, NotFound>>
+    async Task<Results<Ok<Categories>, NotFound>>
         (Guid id, ICategoryService service) =>
     {
         var category = await service.GetCategoryByIdAsync(id);
@@ -80,8 +83,8 @@ app.MapGet("/api/category/{id:guid}",
     });
 
 app.MapPost("/api/category",
-    async Task<Results<Created<Category>, ValidationProblem>>
-        (Category category, ICategoryService service) =>
+    async Task<Results<Created<Categories>, ValidationProblem>>
+        (Categories category, ICategoryService service) =>
     {
         var createdCategory = await service.CreateCategoryAsync(category);
         return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
@@ -89,7 +92,7 @@ app.MapPost("/api/category",
 
 app.MapPut("/api/category/{id:guid}", async (
     Guid id,
-    Category category,
+    Categories category,
     ICategoryService service) =>
 {
     await service.UpdateCategoryAsync(category);

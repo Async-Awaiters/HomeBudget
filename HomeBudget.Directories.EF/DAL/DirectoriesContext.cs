@@ -11,15 +11,17 @@ public class DirectoriesContext : DbContext
     public DbSet<Categories> Categories { get; set; }
     public DbSet<Currency> Сurrencies { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder options)
-    {
-        var config = new ConfigurationBuilder()
-                        .AddJsonFile("appsettings.json")
-                        .SetBasePath(Directory.GetCurrentDirectory())
-                        .Build();
+    //protected override void OnConfiguring(DbContextOptionsBuilder options)
+    //{
+    //    var config = new ConfigurationBuilder()
+    //                    .AddJsonFile("appsettings.json")
+    //                    .SetBasePath(Directory.GetCurrentDirectory())
+    //                    .Build();
 
-        options.UseNpgsql(config.GetConnectionString("postgreSQL"));
-    }
+    //    options.UseNpgsql(config.GetConnectionString("postgreSQL"));
+    //}
+
+    public DirectoriesContext(DbContextOptions<DirectoriesContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,5 +1,5 @@
-﻿using HomeBudget.Directories.Data.Interfaces;
-using HomeBudget.Directories.Data.Models;
+﻿using HomeBudget.Directories.EF.DAL.Interfaces;
+using HomeBudget.Directories.EF.DAL.Models;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.Extensions.Options;
 
@@ -25,13 +25,13 @@ public class CurrencyService : ICurrencyService
     {
         using var cts = new CancellationTokenSource(_defaultTimeout);
         _logger.LogInformation("Getting all currencies");
-        return await _repository.GetAllAsync(cts.Token);
+        return await _repository.GetAll(cts.Token);
     }
 
     public async Task<Currency?> GetCurrencyByIdAsync(Guid id)
     {
         using var cts = new CancellationTokenSource(_defaultTimeout);
         _logger.LogDebug("Getting currency by ID: {CurrencyId}", id);
-        return await _repository.GetByIdAsync(id, cts.Token);
+        return await _repository.GetById(id, cts.Token);
     }
 }

@@ -1,12 +1,12 @@
-﻿using HomeBudget.Directories.Data.Models;
+﻿using HomeBudget.Directories.EF.DAL.Models;
 
 namespace HomeBudget.Directories.Services.Interfaces;
 
 public interface ICategoryService
 {
-    Task<IEnumerable<Category>> GetAllCategoriesAsync();
-    Task<Category?> GetCategoryByIdAsync(Guid id);
-    Task<Category> CreateCategoryAsync(Category category);
-    Task UpdateCategoryAsync(Category category);
+    Task<IEnumerable<Categories>> GetAllCategoriesAsync();
+    Task<Categories?> GetCategoryByIdAsync(Guid id);
+    Task<Categories> CreateCategoryAsync(Categories category);
+    Task UpdateCategoryAsync(Categories category);
     Task DeleteCategoryAsync(Guid id);
 }

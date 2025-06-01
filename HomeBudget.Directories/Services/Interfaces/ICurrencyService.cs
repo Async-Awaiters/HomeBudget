@@ -1,4 +1,4 @@
-﻿using HomeBudget.Directories.Data.Models;
+﻿using HomeBudget.Directories.EF.DAL.Models;
 
 namespace HomeBudget.Directories.Services.Interfaces;
 
