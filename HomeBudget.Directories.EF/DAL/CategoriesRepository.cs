@@ -23,10 +23,12 @@ namespace HomeBudget.Directories.EF.DAL
             return query;
         }
 
-        public async Task<Categories> GetById(Guid id, CancellationToken cancellationToken)
+        public async Task<Categories?> GetById(Guid id, CancellationToken cancellationToken)
         {
             var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id);
-            return !category.IsDeleted ? category : null;
+            return category is not null && !category.IsDeleted
+                ? category
+                : null;
         }
 
         public async Task Create(Categories category, CancellationToken cancellationToken)
@@ -51,14 +53,16 @@ namespace HomeBudget.Directories.EF.DAL
             }
         }
 
-        public async Task Update(Categories category, CancellationToken cancellationToken)
+        public async Task<bool> Update(Categories category, CancellationToken cancellationToken)
         {
             var categoryBD = await _context.Categories.FindAsync(category.Id);
             if (categoryBD != null)
             {
                 _context.Entry(categoryBD).CurrentValues.SetValues(category);
                 await _context.SaveChangesAsync();
+                return true;
             }
+            else return false;
         }
 
         public void Dispose()

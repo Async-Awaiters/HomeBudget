@@ -43,11 +43,12 @@ public class CategoryService : ICategoryService
         return category;
     }
 
-    public async Task UpdateCategoryAsync(Categories category)
+    public async Task<bool> UpdateCategoryAsync(Categories category)
     {
         using var cts = new CancellationTokenSource(_defaultTimeout);
         _logger.LogInformation("Updating category {CategoryId}", category.Id);
-        await _repository.Update(category, cts.Token);
+        var updated = await _repository.Update(category, cts.Token);
+        return updated;
     }
 
     public async Task DeleteCategoryAsync(Guid id)

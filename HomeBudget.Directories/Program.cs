@@ -90,14 +90,22 @@ app.MapPost("/api/category",
         return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
     });
 
-app.MapPut("/api/category/{id:guid}", async (
-    Guid id,
-    Categories category,
-    ICategoryService service) =>
-{
-    await service.UpdateCategoryAsync(category);
-    return TypedResults.NoContent();
-});
+app.MapPut("/api/category/{id:guid}",
+    async Task<Results<NoContent, NotFound, ValidationProblem, BadRequest<string>>>
+        (Guid id, Categories category, ICategoryService service) =>
+    {
+        // Проверка соответствия ID в маршруте и теле запроса
+        if (id != category.Id)
+        {
+            return TypedResults.BadRequest("ID in route doesn't match ID in body");
+        }
+
+        var updateResult = await service.UpdateCategoryAsync(category);
+
+        return updateResult
+            ? TypedResults.NoContent()
+            : TypedResults.NotFound();
+    });
 
 app.MapDelete("/api/category/{id:guid}", async (
     Guid id,

@@ -26,6 +26,6 @@ public class DirectoriesContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Categories>().Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
-        modelBuilder.Entity<Currency>().Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        //modelBuilder.Entity<Currency>().Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
     }
 }

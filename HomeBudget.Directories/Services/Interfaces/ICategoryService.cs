@@ -7,6 +7,6 @@ public interface ICategoryService
     Task<IEnumerable<Categories>> GetAllCategoriesAsync();
     Task<Categories?> GetCategoryByIdAsync(Guid id);
     Task<Categories> CreateCategoryAsync(Categories category);
-    Task UpdateCategoryAsync(Categories category);
+    Task<bool> UpdateCategoryAsync(Categories category);
     Task DeleteCategoryAsync(Guid id);
 }
