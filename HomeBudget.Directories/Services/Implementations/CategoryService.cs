@@ -2,6 +2,7 @@
 using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.Extensions.Options;
+using HomeBudget.Directories.Services.DTO;
 
 namespace HomeBudget.Directories.Services.Implementations;
 
@@ -35,10 +36,19 @@ public class CategoryService : ICategoryService
         return await _repository.GetById(id, cts.Token);
     }
 
-    public async Task<Categories> CreateCategoryAsync(Categories category)
+    public async Task<Categories> CreateCategoryAsync(CreateCategoryDto categoryDto)
     {
         using var cts = new CancellationTokenSource(_defaultTimeout);
         _logger.LogInformation("Creating new category");
+
+        var category = new Categories
+        {
+            Name = categoryDto.Name.Trim(),
+            ParentId = categoryDto.ParentId,
+            UserId = categoryDto.UserId,
+            IsDeleted = false
+        };
+
         await _repository.Create(category, cts.Token);
         return category;
     }

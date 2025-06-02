@@ -11,6 +11,7 @@ using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL;
 using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.EntityFrameworkCore;
+using HomeBudget.Directories.Services.DTO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,7 +85,7 @@ app.MapGet("/api/category/{id:guid}",
 
 app.MapPost("/api/category",
     async Task<Results<Created<Categories>, ValidationProblem>>
-        (Categories category, ICategoryService service) =>
+        (CreateCategoryDto category, ICategoryService service) =>
     {
         var createdCategory = await service.CreateCategoryAsync(category);
         return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
