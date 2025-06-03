@@ -13,7 +13,7 @@ namespace HomeBudget.Directories.EF.DAL
             this._context = context;
         }
 
-        public async Task<IQueryable<Currency>> GetAll(CancellationToken cancellationToken)
+        public IQueryable<Currency> GetAll(CancellationToken cancellationToken)
         {
             IQueryable<Currency> query = _context.Сurrencies.AsNoTracking();
 

@@ -16,7 +16,7 @@ namespace HomeBudget.Directories.EF.DAL
             this._context = context;
         }
 
-        public async Task<IQueryable<Categories>> GetAll(CancellationToken cancellationToken)
+        public IQueryable<Categories> GetAll(CancellationToken cancellationToken)
         {
             var query = _context.Categories.Where(category => !category.IsDeleted);
             

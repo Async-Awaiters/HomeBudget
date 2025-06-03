@@ -3,6 +3,7 @@ using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.Extensions.Options;
 using HomeBudget.Directories.Services.DTO;
+using Microsoft.EntityFrameworkCore;
 
 namespace HomeBudget.Directories.Services.Implementations;
 
@@ -26,7 +27,7 @@ public class CategoryService : ICategoryService
     {
         using var cts = new CancellationTokenSource(_defaultTimeout);
         _logger.LogInformation("Getting all categories");
-        return await _repository.GetAll(cts.Token);
+        return await _repository.GetAll(cts.Token).ToListAsync();
     }
 
     public async Task<Categories?> GetCategoryByIdAsync(Guid id)

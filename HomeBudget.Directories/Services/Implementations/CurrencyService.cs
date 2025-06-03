@@ -1,6 +1,7 @@
 ﻿using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
 using HomeBudget.Directories.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace HomeBudget.Directories.Services.Implementations;
@@ -25,7 +26,7 @@ public class CurrencyService : ICurrencyService
     {
         using var cts = new CancellationTokenSource(_defaultTimeout);
         _logger.LogInformation("Getting all currencies");
-        return await _repository.GetAll(cts.Token);
+        return await _repository.GetAll(cts.Token).ToListAsync();
     }
 
     public async Task<Currency?> GetCurrencyByIdAsync(Guid id)
