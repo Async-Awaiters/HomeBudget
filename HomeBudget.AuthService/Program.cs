@@ -2,6 +2,7 @@
 using HomeBudget.AuthService.EF.Repositories;
 using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Endpoints;
+using HomeBudget.AuthService.Middleware;
 using HomeBudget.AuthService.Services;
 using HomeBudget.AuthService.Services.Implementations;
 using HomeBudget.AuthService.Services.Interfaces;
@@ -16,12 +17,12 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//// Логирование
-//builder.Services.AddLogging(logging =>
-//{
-//    logging.AddConsole();
-//    logging.AddDebug();
-//});
+// Логирование
+builder.Services.AddLogging(logging =>
+{
+    logging.AddConsole();
+    logging.AddDebug();
+});
 
 // Подключение к БД
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -113,7 +114,10 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+
 var app = builder.Build();
+
+app.UseExceptionMiddleware();
 
 // Настраиваем Swagger и Scalar
 if (app.Environment.IsDevelopment())
