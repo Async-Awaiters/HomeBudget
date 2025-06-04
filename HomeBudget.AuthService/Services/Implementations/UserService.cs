@@ -11,6 +11,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 
 namespace HomeBudget.AuthService.Services.Implementations
 {
@@ -19,19 +20,21 @@ namespace HomeBudget.AuthService.Services.Implementations
         private readonly IUserRepository _repository;
         private readonly ILogger<UserService> _logger;
         private readonly IConfiguration _configuration;
+        private readonly TimeSpan _defaultTimeout;
 
-        public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration)
+
+        public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration, IOptions<ServiceTimeoutsOptions> options)
         {
             _repository = repository;
             _logger = logger;
             _configuration = configuration;
+            _defaultTimeout = TimeSpan.FromMilliseconds(options.Value.UserService);
         }
 
-        public async Task<UserDto> RegisterAsync(RegisterRequest request, CancellationToken ct)
+        public async Task<UserDto> RegisterAsync(RegisterRequest request)
         {
             var user = new User
             {
-                Id = Guid.NewGuid(),
                 Login = request.Login,
                 Email = request.Email,
                 FirstName = request.FirstName,
@@ -42,15 +45,18 @@ namespace HomeBudget.AuthService.Services.Implementations
                 IsDeleted = false
             };
 
-            await _repository.AddAsync(user, ct);
+            using var cts = new CancellationTokenSource(_defaultTimeout);
+            await _repository.AddAsync(user, cts.Token);
             _logger.LogInformation("User registered: {Login}", user.Login);
 
             return MapToDto(user);
         }
 
-        public async Task<string> LoginAsync(LoginRequest request, CancellationToken ct)
+        public async Task<string> LoginAsync(LoginRequest request)
         {
-            var user = await _repository.GetByLoginAsync(request.Login, ct);
+            using var cts = new CancellationTokenSource(_defaultTimeout);
+
+            var user = await _repository.GetByLoginAsync(request.Login, cts.Token);
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
             {
                 throw new UnauthorizedAccessException("Invalid login or password");
@@ -59,9 +65,11 @@ namespace HomeBudget.AuthService.Services.Implementations
             return GenerateJwtToken(user);
         }
 
-        public async Task UpdateAsync(Guid userId, UpdateRequest request, CancellationToken ct)
+        public async Task UpdateAsync(Guid userId, UpdateRequest request)
         {
-            var user = await _repository.GetByIdAsync(userId, ct);
+            using var cts = new CancellationTokenSource(_defaultTimeout);
+
+            var user = await _repository.GetByIdAsync(userId, cts.Token);
             if (user == null)
             {
                 throw new KeyNotFoundException("User not found");
@@ -72,7 +80,7 @@ namespace HomeBudget.AuthService.Services.Implementations
             user.LastName = request.LastName ?? user.LastName;
             user.BirthDate = request.BirthDate ?? user.BirthDate;
 
-            await _repository.UpdateAsync(user, ct);
+            await _repository.UpdateAsync(user, cts.Token);
             _logger.LogInformation("User updated: {Login}", user.Login);
         }
 

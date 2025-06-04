@@ -2,6 +2,7 @@
 using HomeBudget.AuthService.EF.Repositories;
 using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Endpoints;
+using HomeBudget.AuthService.Services;
 using HomeBudget.AuthService.Services.Implementations;
 using HomeBudget.AuthService.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,12 +16,12 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Логирование
-builder.Services.AddLogging(logging =>
-{
-    logging.AddConsole();
-    logging.AddDebug();
-});
+//// Логирование
+//builder.Services.AddLogging(logging =>
+//{
+//    logging.AddConsole();
+//    logging.AddDebug();
+//});
 
 // Подключение к БД
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -29,6 +30,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Репозитории и сервисы
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddOptions<ServiceTimeoutsOptions>()
+    .Bind(builder.Configuration.GetSection("Services:Timeouts"))
+    .Validate(x => x.UserService > 0, "CategoryService timeout must be positive")
+    .Validate(x => x.UserService <= 60_000, "CurrencyService timeout too long");
 
 // Аутентификация JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -110,52 +116,27 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Настраиваем Swagger и Scalar
-app.UseSwagger(options =>
+if (app.Environment.IsDevelopment())
 {
-    options.RouteTemplate = "openapi/{documentName}.json";
-    options.SerializeAsV2 = false; // Убедимся, что используется OpenAPI 3.0
-});
+    app.UseSwagger(options =>
+    {
+        options.RouteTemplate = "openapi/{documentName}.json";
+        options.SerializeAsV2 = false;
+    });
 
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/openapi/v1.json", "HomeBudget AuthService API v1");
-    c.RoutePrefix = "swagger"; // Swagger UI будет доступен по /swagger
-});
+    // Настраиваем Scalar
+    app.MapScalarApiReference(options =>
+    {
+        options
+            .WithTitle("HomeBudget AuthService API")
+            .WithTheme(ScalarTheme.Moon)
+            .WithSidebar(true)
+            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+            .WithOpenApiRoutePattern("/openapi/v1.json");
+    });
+}
 
-// Настраиваем Scalar
-app.MapScalarApiReference(options =>
-{
-    options
-        .WithTitle("HomeBudget AuthService API")
-        .WithTheme(ScalarTheme.Moon)
-        .WithSidebar(true)
-        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
-        .WithOpenApiRoutePattern("/openapi/v1.json"); // Указываем путь к OpenAPI JSON
-});
-
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseSwagger(options =>
-//    {
-//        options.RouteTemplate = "/openapi/{documentName}.json";
-//    });
-//    app.MapScalarApiReference(options =>
-//    {
-//        options.Title = "authService API";
-//        options.ShowSidebar = true;
-//    });
-//}
-
-//app.UseHttpsRedirection();
-
-//// Применение миграций при запуске
-//using (var scope = app.Services.CreateScope())
-//{
-//    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-//    dbContext.Database.Migrate();
-//}
-
-//app.UseMiddleware<ExceptionMiddleware>();
+app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,5 +1,4 @@
 ﻿using HomeBudget.AuthService.Models;
-using HomeBudget.AuthService.Services;
 using HomeBudget.AuthService.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
@@ -12,15 +11,15 @@ public static class UserEndpoints
 {
     public static void MapUserEndpoints(this WebApplication app)
     {
-        app.MapPost("/api/register", async (IUserService service, RegisterRequest request, CancellationToken ct) =>
+        app.MapPost("/api/register", async (IUserService service, RegisterRequest request) =>
         {
-            var user = await service.RegisterAsync(request, ct);
+            var user = await service.RegisterAsync(request);
             return Results.Ok(user);
         });
 
-        app.MapPost("/api/login", async (IUserService service, LoginRequest request, HttpContext context, CancellationToken ct) =>
+        app.MapPost("/api/login", async (IUserService service, LoginRequest request, HttpContext context) =>
         {
-            var token = await service.LoginAsync(request, ct);
+            var token = await service.LoginAsync(request);
             context.Response.Cookies.Append("auth_token", token, new CookieOptions
             {
                 HttpOnly = true,
@@ -29,17 +28,17 @@ public static class UserEndpoints
                 Path = "/",
                 MaxAge = TimeSpan.FromMinutes(60)
             });
-            return Results.Ok(new { RedirectUrl = "/accounts" });
+            return Results.Ok(new { Token = token });
         });
 
-        app.MapPut("/api/users", async (IUserService service, UpdateRequest request, HttpContext context, CancellationToken ct) =>
+        app.MapPut("/api/users", async (IUserService service, UpdateRequest request, HttpContext context) =>
         {
             var userId = GetUserId(context);
-            await service.UpdateAsync(userId, request, ct);
+            await service.UpdateAsync(userId, request);
             return Results.NoContent();
         }).RequireAuthorization();
 
-        app.MapPost("/api/logout", async (IUserService service, HttpContext context, CancellationToken ct) =>
+        app.MapPost("/api/logout", async (IUserService service, HttpContext context) =>
         {
             await service.LogoutAsync(context);
             return Results.Ok(new { Message = "Logged out successfully" });

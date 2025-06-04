@@ -11,9 +11,9 @@ namespace HomeBudget.AuthService.Services.Interfaces
 {
     public interface IUserService
     {
-        Task<UserDto> RegisterAsync(RegisterRequest request, CancellationToken ct);
-        Task<string> LoginAsync(LoginRequest request, CancellationToken ct);
-        Task UpdateAsync(Guid userId, UpdateRequest request, CancellationToken ct);
+        Task<UserDto> RegisterAsync(RegisterRequest request);
+        Task<string> LoginAsync(LoginRequest request);
+        Task UpdateAsync(Guid userId, UpdateRequest request);
         Task LogoutAsync(HttpContext context);
     }
 }
