@@ -1,17 +1,17 @@
 using HomeBudget.Directories;
+using HomeBudget.Directories.EF.DAL;
+using HomeBudget.Directories.EF.DAL.Interfaces;
+using HomeBudget.Directories.EF.DAL.Models;
+using HomeBudget.Directories.Services.DTO;
 using HomeBudget.Directories.Services.Implementations;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using HomeBudget.Directories.EF.DAL.Interfaces;
-using HomeBudget.Directories.EF.DAL;
-using HomeBudget.Directories.EF.DAL.Models;
-using Microsoft.EntityFrameworkCore;
-using HomeBudget.Directories.Services.DTO;
 
 var builder = WebApplication.CreateBuilder(args);
 

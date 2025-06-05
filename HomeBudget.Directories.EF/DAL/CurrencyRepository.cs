@@ -1,7 +1,6 @@
 ﻿using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Threading;
 
 namespace HomeBudget.Directories.EF.DAL
 {
