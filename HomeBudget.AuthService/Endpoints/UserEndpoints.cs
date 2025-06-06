@@ -20,15 +20,8 @@ public static class UserEndpoints
         app.MapPost("/api/login", async (IUserService service, LoginRequest request, HttpContext context) =>
         {
             var token = await service.LoginAsync(request);
-            context.Response.Cookies.Append("auth_token", token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Path = "/",
-                MaxAge = TimeSpan.FromMinutes(60)
-            });
-            return Results.Ok(new { Token = token });
+            context.Response.Headers.Append("Authorization", $"Bearer {token}");
+            return Results.Ok();
         });
 
         app.MapPut("/api/users", async (IUserService service, UpdateRequest request, HttpContext context) =>
@@ -48,6 +41,16 @@ public static class UserEndpoints
     private static Guid GetUserId(HttpContext context)
     {
         var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return Guid.Parse(userIdClaim);
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            throw new UnauthorizedAccessException("User ID not found in token.");
+        }
+
+        if (!Guid.TryParse(userIdClaim, out var userId))
+        {
+            throw new UnauthorizedAccessException("Invalid user ID format in token.");
+        }
+
+        return userId;
     }
 }

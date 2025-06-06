@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using HomeBudget.AuthService.Exceptions;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Net;
 using System.Text.Json;
@@ -31,12 +32,15 @@ namespace HomeBudget.AuthService.Middleware
 
         private Task HandleExceptionAsync(HttpContext context, Exception ex)
         {
-            // Определяем HTTP-статус и сообщение
             HttpStatusCode statusCode;
             string message;
 
             switch (ex)
             {
+                case DuplicateUserException _:
+                    statusCode = HttpStatusCode.Conflict; // 409 Conflict
+                    message = ex.Message;
+                    break;
                 case KeyNotFoundException _:
                     statusCode = HttpStatusCode.NotFound;
                     message = ex.Message;
@@ -55,7 +59,6 @@ namespace HomeBudget.AuthService.Middleware
                     break;
             }
 
-            // Формируем JSON-ответ
             var response = new
             {
                 Status = (int)statusCode,

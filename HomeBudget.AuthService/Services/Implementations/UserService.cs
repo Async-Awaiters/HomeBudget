@@ -1,17 +1,14 @@
-﻿using HomeBudget.AuthService.Models;
-using HomeBudget.AuthService.Services.Interfaces;
+﻿using HomeBudget.AuthService.EF.Models;
 using HomeBudget.AuthService.EF.Repositories.Interfaces;
-using HomeBudget.AuthService.EF.Models;
-
+using HomeBudget.AuthService.Exceptions;
+using HomeBudget.AuthService.Models;
+using HomeBudget.AuthService.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.Extensions.Configuration;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Options;
 
 namespace HomeBudget.AuthService.Services.Implementations
 {
@@ -33,8 +30,25 @@ namespace HomeBudget.AuthService.Services.Implementations
 
         public async Task<UserDto> RegisterAsync(RegisterRequest request)
         {
+            using var cts = new CancellationTokenSource(_defaultTimeout);
+
             try
             {
+                var existingUserByLogin = await _repository.GetByLoginAsync(request.Login, cts.Token);
+                if (existingUserByLogin != null)
+                {
+                    _logger.LogWarning("Registration failed: Login '{Login}' is already taken.", request.Login);
+                    throw new DuplicateUserException("Login", request.Login);
+                }
+
+                // Проверка уникальности email
+                var existingUserByEmail = await _repository.GetByEmailAsync(request.Email, cts.Token);
+                if (existingUserByEmail != null)
+                {
+                    _logger.LogWarning("Registration failed: Email '{Email}' is already taken.", request.Email);
+                    throw new DuplicateUserException("Email", request.Email);
+                }
+
                 var user = new User
                 {
                     Login = request.Login,
@@ -47,7 +61,6 @@ namespace HomeBudget.AuthService.Services.Implementations
                     IsDeleted = false
                 };
 
-                using var cts = new CancellationTokenSource(_defaultTimeout);
                 await _repository.AddAsync(user, cts.Token);
                 _logger.LogInformation("User registered: {Login}", user.Login);
 
@@ -122,17 +135,11 @@ namespace HomeBudget.AuthService.Services.Implementations
             }
         }
 
+        //Пока сещуствует как заглушка
         public Task LogoutAsync(HttpContext context)
         {
             try
             {
-                context.Response.Cookies.Delete("auth_token", new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Path = "/"
-                });
                 _logger.LogInformation("User logged out successfully");
                 return Task.CompletedTask;
             }
@@ -158,18 +165,42 @@ namespace HomeBudget.AuthService.Services.Implementations
         {
             try
             {
+                var jwtSecret = _configuration["Jwt:Secret"];
+                if (string.IsNullOrEmpty(jwtSecret))
+                {
+                    throw new InvalidOperationException("JWT Secret is not configured. Please set 'Jwt:Secret' in appsettings.json.");
+                }
+
+                var lifetimeMinutes = _configuration["Jwt:LifetimeMinutes"];
+                if (string.IsNullOrEmpty(lifetimeMinutes) || !int.TryParse(lifetimeMinutes, out var lifetime))
+                {
+                    throw new InvalidOperationException("JWT LifetimeMinutes is not configured or invalid. Please set 'Jwt:LifetimeMinutes' in appsettings.json.");
+                }
+
+                var jwtIssuer = _configuration["Jwt:Issuer"];
+                if (string.IsNullOrEmpty(jwtIssuer))
+                {
+                    throw new InvalidOperationException("JWT Issuer is not configured. Please set 'Jwt:Issuer' in appsettings.json.");
+                }
+
+                var jwtAudience = _configuration["Jwt:Audience"];
+                if (string.IsNullOrEmpty(jwtAudience))
+                {
+                    throw new InvalidOperationException("JWT Audience is not configured. Please set 'Jwt:Audience' in appsettings.json.");
+                }
+
                 var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Secret"]);
+                var key = Encoding.ASCII.GetBytes(jwtSecret);
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     Subject = new ClaimsIdentity(new[]
                     {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.Login)
-                }),
-                    Expires = DateTime.UtcNow.AddMinutes(int.Parse(_configuration["Jwt:LifetimeMinutes"])),
-                    Issuer = _configuration["Jwt:Issuer"],
-                    Audience = _configuration["Jwt:Audience"],
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Login)
+            }),
+                    Expires = DateTime.UtcNow.AddMinutes(lifetime),
+                    Issuer = jwtIssuer,
+                    Audience = jwtAudience,
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
                 };
                 var token = tokenHandler.CreateToken(tokenDescriptor);

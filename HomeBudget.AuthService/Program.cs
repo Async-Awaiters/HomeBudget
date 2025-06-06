@@ -41,33 +41,36 @@ builder.Services.AddOptions<ServiceTimeoutsOptions>()
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        var jwtSecret = builder.Configuration["Jwt:Secret"];
+        if (string.IsNullOrEmpty(jwtSecret))
+        {
+            throw new InvalidOperationException("JWT Secret is not configured. Please set 'Jwt:Secret' in appsettings.json.");
+        }
+
+        var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+        if (string.IsNullOrEmpty(jwtIssuer))
+        {
+            throw new InvalidOperationException("JWT Issuer is not configured. Please set 'Jwt:Issuer' in appsettings.json.");
+        }
+
+        var jwtAudience = builder.Configuration["Jwt:Audience"];
+        if (string.IsNullOrEmpty(jwtAudience))
+        {
+            throw new InvalidOperationException("JWT Audience is not configured. Please set 'Jwt:Audience' in appsettings.json.");
+        }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Secret"]))
-        };
-
-        // Извлекаем токен из куки
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                var token = context.Request.Cookies["auth_token"];
-                if (!string.IsNullOrEmpty(token))
-                {
-                    context.Token = token;
-                }
-                return Task.CompletedTask;
-            }
+                Encoding.ASCII.GetBytes(jwtSecret))
         };
     });
-
 builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
