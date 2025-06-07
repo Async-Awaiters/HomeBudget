@@ -20,7 +20,7 @@ public class CurrencyService : ICurrencyService
     {
         _repository = repository;
         _logger = logger;
-        int timeoutMs = configuration.GetValue<int>("Services:Timeouts:CategoryService", _defaultTimeout);
+        int timeoutMs = configuration.GetValue<int>("Services:Timeouts:CurrencyService", _defaultTimeout);
         _timeout = TimeSpan.FromMilliseconds(timeoutMs);
     }
 
