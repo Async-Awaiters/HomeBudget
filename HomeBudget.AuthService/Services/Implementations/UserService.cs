@@ -17,20 +17,22 @@ namespace HomeBudget.AuthService.Services.Implementations
         private readonly IUserRepository _repository;
         private readonly ILogger<UserService> _logger;
         private readonly IConfiguration _configuration;
-        private readonly TimeSpan _defaultTimeout;
+        private readonly TimeSpan _timeout;
+        private const int _defaultTimeout = 30000;
 
 
-        public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration, IOptions<ServiceTimeoutsOptions> options)
+        public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration)
         {
             _repository = repository;
             _logger = logger;
             _configuration = configuration;
-            _defaultTimeout = TimeSpan.FromMilliseconds(options.Value.UserService);
+            int timeoutMs = configuration.GetValue<int>("Services:Timeouts:UserService", _defaultTimeout);
+            _timeout = TimeSpan.FromMilliseconds(timeoutMs);
         }
 
         public async Task<UserDto> RegisterAsync(RegisterRequest request)
         {
-            using var cts = new CancellationTokenSource(_defaultTimeout);
+            using var cts = new CancellationTokenSource(_timeout);
 
             try
             {
@@ -76,7 +78,7 @@ namespace HomeBudget.AuthService.Services.Implementations
 
         public async Task<string> LoginAsync(LoginRequest request)
         {
-            using var cts = new CancellationTokenSource(_defaultTimeout);
+            using var cts = new CancellationTokenSource(_timeout);
 
             try
             {
@@ -105,7 +107,7 @@ namespace HomeBudget.AuthService.Services.Implementations
 
         public async Task UpdateAsync(Guid userId, UpdateRequest request)
         {
-            using var cts = new CancellationTokenSource(_defaultTimeout);
+            using var cts = new CancellationTokenSource(_timeout);
 
             try
             {
