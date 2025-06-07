@@ -3,7 +3,6 @@ using HomeBudget.AuthService.EF.Repositories;
 using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Endpoints;
 using HomeBudget.AuthService.Middleware;
-using HomeBudget.AuthService.Services;
 using HomeBudget.AuthService.Services.Implementations;
 using HomeBudget.AuthService.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
