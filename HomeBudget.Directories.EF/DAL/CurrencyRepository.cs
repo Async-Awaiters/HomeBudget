@@ -1,7 +1,6 @@
 ﻿using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Threading;
 
 namespace HomeBudget.Directories.EF.DAL
 {
@@ -10,19 +9,20 @@ namespace HomeBudget.Directories.EF.DAL
         private readonly DirectoriesContext _context;
         public CurrencyRepository(DirectoriesContext context) 
         {
-            this._context = new DirectoriesContext();
+            this._context = context;
         }
 
-        public async Task<IQueryable<Currency>> GetAll(CancellationToken cancellationToken)
+        public IQueryable<Currency> GetAll(CancellationToken cancellationToken)
         {
             IQueryable<Currency> query = _context.Сurrencies.AsNoTracking();
 
             return query;
         }
 
-        public async Task<Currency> GetById(Guid id, CancellationToken cancellationToken)
+        public async Task<Currency?> GetById(Guid id, CancellationToken cancellationToken)
         {
-            return await _context.Сurrencies.FirstOrDefaultAsync(currency => currency.Id == id);
+            var currency = await _context.Сurrencies.FirstOrDefaultAsync(currency => currency.Id == id);
+            return currency is not null ? currency : null;
         }
 
         public async Task Create(Currency currency, CancellationToken cancellationToken)
@@ -37,14 +37,16 @@ namespace HomeBudget.Directories.EF.DAL
             await _context.SaveChangesAsync();
         }
 
-        public async Task Update(Currency currency, CancellationToken cancellationToken) 
+        public async Task<bool> Update(Currency currency, CancellationToken cancellationToken) 
         {
             var currencyBD = await _context.Сurrencies.FindAsync(currency.Id);
             if (currencyBD != null)
             {
                 _context.Entry(currencyBD).CurrentValues.SetValues(currency);
                 await _context.SaveChangesAsync();
+                return true;
             }
+            else return false;
         }
 
         public void Dispose()
