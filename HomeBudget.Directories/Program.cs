@@ -28,13 +28,6 @@ builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 builder.Services.AddScoped<ICategoriesRepository, CategoriesRepository>();
 builder.Services.AddScoped<ICurrencyRepository, CurrencyRepository>();
 
-builder.Services.AddOptions<ServiceTimeoutsOptions>()
-    .Bind(builder.Configuration.GetSection("Services:Timeouts"))
-    .Validate(x => x.CategoryService > 0, "CategoryService timeout must be positive")
-    .Validate(x => x.CurrencyService > 0, "CurrencyService timeout must be positive")
-    .Validate(x => x.CategoryService <= 60_000, "CategoryService timeout too long")
-    .Validate(x => x.CurrencyService <= 60_000, "CurrencyService timeout too long");
-
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddEndpointsApiExplorer();

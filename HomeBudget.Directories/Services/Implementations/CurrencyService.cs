@@ -10,28 +10,30 @@ public class CurrencyService : ICurrencyService
 {
     private readonly ICurrencyRepository _repository;
     private readonly ILogger<CurrencyService> _logger;
-    private readonly TimeSpan _defaultTimeout;
+    private readonly TimeSpan _timeout;
+    private const int _defaultTimeout = 30000;
 
     public CurrencyService(
         ICurrencyRepository repository,
         ILogger<CurrencyService> logger,
-        IOptions<ServiceTimeoutsOptions> options)
+            IConfiguration configuration)
     {
         _repository = repository;
         _logger = logger;
-        _defaultTimeout = TimeSpan.FromMilliseconds(options.Value.CurrencyService);
+        int timeoutMs = configuration.GetValue<int>("Services:Timeouts:CategoryService", _defaultTimeout);
+        _timeout = TimeSpan.FromMilliseconds(timeoutMs);
     }
 
     public async Task<IEnumerable<Currency>> GetAllCurrenciesAsync()
     {
-        using var cts = new CancellationTokenSource(_defaultTimeout);
+        using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Getting all currencies");
         return await _repository.GetAll(cts.Token).ToListAsync();
     }
 
     public async Task<Currency?> GetCurrencyByIdAsync(Guid id)
     {
-        using var cts = new CancellationTokenSource(_defaultTimeout);
+        using var cts = new CancellationTokenSource(_timeout);
         _logger.LogDebug("Getting currency by ID: {CurrencyId}", id);
         return await _repository.GetById(id, cts.Token);
     }
