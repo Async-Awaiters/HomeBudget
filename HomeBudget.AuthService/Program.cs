@@ -32,11 +32,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 
-builder.Services.AddOptions<ServiceTimeoutsOptions>()
-    .Bind(builder.Configuration.GetSection("Services:Timeouts"))
-    .Validate(x => x.UserService > 0, "CategoryService timeout must be positive")
-    .Validate(x => x.UserService <= 60_000, "CurrencyService timeout too long");
-
 // Аутентификация JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
