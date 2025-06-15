@@ -13,14 +13,14 @@ namespace HomeBudget.Directories.EF.DAL
             this._context = context;
         }
 
-        public IQueryable<Categories> GetAll(CancellationToken cancellationToken)
+        public IQueryable<Category> GetAll(CancellationToken cancellationToken)
         {
             var query = _context.Categories.Where(category => !category.IsDeleted);
             
             return query;
         }
 
-        public async Task<Categories?> GetById(Guid id, CancellationToken cancellationToken)
+        public async Task<Category?> GetById(Guid id, CancellationToken cancellationToken)
         {
             var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id);
             return category is not null && !category.IsDeleted
@@ -28,7 +28,7 @@ namespace HomeBudget.Directories.EF.DAL
                 : null;
         }
 
-        public async Task Create(Categories category, CancellationToken cancellationToken)
+        public async Task Create(Category category, CancellationToken cancellationToken)
         {
             var currencyDb = _context.Categories.AnyAsync(x => String.Equals(x.Name, category.Name) && String.Equals(x.ParentId, category.ParentId) && String.Equals(x.UserId, category.UserId));
             if (currencyDb.Result)
@@ -50,7 +50,7 @@ namespace HomeBudget.Directories.EF.DAL
             }
         }
 
-        public async Task<bool> Update(Categories category, CancellationToken cancellationToken)
+        public async Task<bool> Update(Category category, CancellationToken cancellationToken)
         {
             var categoryBD = await _context.Categories.FindAsync(category.Id);
             if (categoryBD != null)

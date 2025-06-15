@@ -26,26 +26,26 @@ public class CategoryService : ICategoryService
         _timeout = TimeSpan.FromMilliseconds(timeoutMs);
     }
 
-    public async Task<IEnumerable<Categories>> GetAllCategoriesAsync()
+    public async Task<IEnumerable<Category>> GetAllCategoriesAsync()
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Getting all categories");
         return await _repository.GetAll(cts.Token).ToListAsync();
     }
 
-    public async Task<Categories?> GetCategoryByIdAsync(Guid id)
+    public async Task<Category?> GetCategoryByIdAsync(Guid id)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogDebug("Getting category by ID: {CategoryId}", id);
         return await _repository.GetById(id, cts.Token);
     }
 
-    public async Task<Categories> CreateCategoryAsync(CreateCategoryDto categoryDto)
+    public async Task<Category> CreateCategoryAsync(CreateCategoryDto categoryDto)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Creating new category");
 
-        var category = new Categories
+        var category = new Category
         {
             Name = categoryDto.Name.Trim(),
             ParentId = categoryDto.ParentId,
@@ -57,7 +57,7 @@ public class CategoryService : ICategoryService
         return category;
     }
 
-    public async Task<bool> UpdateCategoryAsync(Categories category)
+    public async Task<bool> UpdateCategoryAsync(Category category)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Updating category {CategoryId}", category.Id);

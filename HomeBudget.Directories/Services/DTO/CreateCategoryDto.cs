@@ -10,6 +10,6 @@ namespace HomeBudget.Directories.Services.DTO
         public Guid? ParentId { get; set; }  // null для корневых категорий
 
         [Required]
-        public Guid UserId { get; set; }
+        public Guid? UserId { get; set; }
     }
 }
