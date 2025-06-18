@@ -10,13 +10,13 @@ namespace HomeBudget.Directories.EF.DAL
 
         public CategoriesRepository(DirectoriesContext context)
         {
-            this._context = context;
+            _context = context;
         }
 
         public IQueryable<Category> GetAll(CancellationToken cancellationToken)
         {
             var query = _context.Categories.Where(category => !category.IsDeleted);
-            
+
             return query;
         }
 

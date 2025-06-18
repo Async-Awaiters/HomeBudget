@@ -1,10 +1,8 @@
-﻿using HomeBudget.Directories.Services.Interfaces;
-using HomeBudget.Directories.EF.DAL.Interfaces;
+﻿using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
-using Microsoft.Extensions.Options;
 using HomeBudget.Directories.Services.DTO;
+using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Metadata;
 
 namespace HomeBudget.Directories.Services.Implementations;
 
@@ -22,7 +20,7 @@ public class CategoryService : ICategoryService
     {
         _repository = repository;
         _logger = logger;
-        int timeoutMs = configuration.GetValue<int>("Services:Timeouts:CategoryService", _defaultTimeout);
+        int timeoutMs = configuration.GetValue("Services:Timeouts:CategoryService", _defaultTimeout);
         _timeout = TimeSpan.FromMilliseconds(timeoutMs);
     }
 

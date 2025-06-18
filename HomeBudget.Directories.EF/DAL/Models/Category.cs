@@ -9,12 +9,15 @@ namespace HomeBudget.Directories.EF.DAL.Models
     {
         [SwaggerIgnore]
         public Guid Id { get; set; }
+
         [JsonRequired]
-        public string Name { get; set; }
+        public required string Name { get; set; }
+
         [JsonRequired]
         public bool IsDeleted { get; set; }
 
         public Guid? ParentId { get; set; }
+
         public Guid? UserId { get; set; }
     }
 }

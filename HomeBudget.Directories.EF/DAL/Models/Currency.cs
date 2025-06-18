@@ -7,11 +7,14 @@ namespace HomeBudget.Directories.EF.DAL.Models
     {
         [SwaggerIgnore]
         public Guid Id { get; set; }
+
         [JsonRequired]
-        public string Name { get; set; }
+        public required string Name { get; set; }
+
         [JsonRequired]
-        public string Code { get; set; }
+        public required string Code { get; set; }
+
         [JsonRequired]
-        public string Country { get; set; }
+        public required string Country { get; set; }
     }
 }

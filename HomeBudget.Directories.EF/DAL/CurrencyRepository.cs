@@ -4,12 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomeBudget.Directories.EF.DAL
 {
-    public class CurrencyRepository: ICurrencyRepository
+    public class CurrencyRepository : ICurrencyRepository
     {
         private readonly DirectoriesContext _context;
-        public CurrencyRepository(DirectoriesContext context) 
+
+        public CurrencyRepository(DirectoriesContext context)
         {
-            this._context = context;
+            _context = context;
         }
 
         public IQueryable<Currency> GetAll(CancellationToken cancellationToken)
@@ -27,7 +28,7 @@ namespace HomeBudget.Directories.EF.DAL
 
         public async Task Create(Currency currency, CancellationToken cancellationToken)
         {
-            var currencyDb = _context.Сurrencies.AnyAsync(cur => String.Equals(cur.Name, currency.Name) && String.Equals(cur.Code, currency.Code) && String.Equals(cur.Country, cur.Country));
+            var currencyDb = _context.Сurrencies.AnyAsync(cur => string.Equals(cur.Name, currency.Name) && string.Equals(cur.Code, currency.Code) && string.Equals(cur.Country, cur.Country));
             if (currencyDb.Result)
             {
                 throw new Exception("Нет такой валюты");
@@ -37,7 +38,7 @@ namespace HomeBudget.Directories.EF.DAL
             await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> Update(Currency currency, CancellationToken cancellationToken) 
+        public async Task<bool> Update(Currency currency, CancellationToken cancellationToken)
         {
             var currencyBD = await _context.Сurrencies.FindAsync(currency.Id);
             if (currencyBD != null)
