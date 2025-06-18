@@ -77,6 +77,13 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API для аутентификации и управления пользователями в системе HomeBudget."
     });
 
+    c.MapType<DateOnly>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "date",
+        Example = OpenApiAnyFactory.CreateFromJson("\"2025-06-18\"")
+    });
+
     c.MapType<Guid>(() => new OpenApiSchema
     {
         Type = "string",

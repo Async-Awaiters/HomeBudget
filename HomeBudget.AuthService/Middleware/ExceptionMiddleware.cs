@@ -21,7 +21,7 @@ namespace HomeBudget.AuthService.Middleware
         {
             try
             {
-                await _next(context); // Передаем запрос следующему middleware
+                await _next(context);
             }
             catch (Exception ex)
             {
@@ -38,7 +38,7 @@ namespace HomeBudget.AuthService.Middleware
             switch (ex)
             {
                 case DuplicateUserException _:
-                    statusCode = HttpStatusCode.Conflict; // 409 Conflict
+                    statusCode = HttpStatusCode.Conflict;
                     message = ex.Message;
                     break;
                 case KeyNotFoundException _:

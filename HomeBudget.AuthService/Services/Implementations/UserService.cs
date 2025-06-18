@@ -4,7 +4,6 @@ using HomeBudget.AuthService.Exceptions;
 using HomeBudget.AuthService.Models;
 using HomeBudget.AuthService.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -96,7 +95,7 @@ namespace HomeBudget.AuthService.Services.Implementations
             }
             catch (UnauthorizedAccessException)
             {
-                throw; // Уже обработано в if выше, просто перебрасываем
+                throw;
             }
             catch (Exception ex)
             {

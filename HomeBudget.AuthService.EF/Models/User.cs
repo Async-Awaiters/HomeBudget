@@ -9,7 +9,7 @@
         public required string LastName { get; set; }
         public required string Password { get; set; } // Хэш пароля
         public DateTime RegDate { get; set; }
-        public DateTime? BirthDate { get; set; }
+        public DateOnly? BirthDate { get; set; }
         public bool IsDeleted { get; set; }
     }
 }

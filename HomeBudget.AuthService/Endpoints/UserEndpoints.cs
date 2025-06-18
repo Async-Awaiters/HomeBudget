@@ -13,28 +13,28 @@ public static class UserEndpoints
     {
         app.MapPost("/api/register", async (IUserService service, RegisterRequest request) =>
         {
-            var user = await service.RegisterAsync(request);
-            return Results.Ok(user);
+            UserDto user = await service.RegisterAsync(request);
+            return TypedResults.Ok(user);
         });
 
         app.MapPost("/api/login", async (IUserService service, LoginRequest request, HttpContext context) =>
         {
             var token = await service.LoginAsync(request);
             context.Response.Headers.Append("Authorization", $"Bearer {token}");
-            return Results.Ok();
+            return TypedResults.Ok();
         });
 
         app.MapPut("/api/users", async (IUserService service, UpdateRequest request, HttpContext context) =>
         {
             var userId = GetUserId(context);
             await service.UpdateAsync(userId, request);
-            return Results.NoContent();
+            return TypedResults.Ok();
         }).RequireAuthorization();
 
         app.MapPost("/api/logout", async (IUserService service, HttpContext context) =>
         {
             await service.LogoutAsync(context);
-            return Results.Ok(new { Message = "Logged out successfully" });
+            return TypedResults.Ok();
         }).RequireAuthorization();
     }
 

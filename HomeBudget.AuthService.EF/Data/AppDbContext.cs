@@ -1,7 +1,6 @@
 ﻿using HomeBudget.AuthService.EF.Models;
 using Microsoft.EntityFrameworkCore;
-
-
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HomeBudget.AuthService.EF.Data;
 
@@ -13,6 +12,11 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.Property(e => e.BirthDate).HasColumnType("date");
+        });
+
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Login)
             .IsUnique();
