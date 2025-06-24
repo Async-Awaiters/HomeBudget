@@ -1,8 +1,8 @@
 ﻿using HomeBudget.AuthService.Models;
 using HomeBudget.AuthService.Services.Interfaces;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Builder;
 
 
 namespace HomeBudget.AuthService.Endpoints;

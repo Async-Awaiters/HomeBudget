@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace HomeBudget.AuthService.Exceptions
+﻿namespace HomeBudget.AuthService.Exceptions
 {
     public class DuplicateUserException : Exception
     {

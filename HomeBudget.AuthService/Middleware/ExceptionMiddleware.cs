@@ -53,6 +53,14 @@ namespace HomeBudget.AuthService.Middleware
                     statusCode = HttpStatusCode.BadRequest;
                     message = ex.Message;
                     break;
+                case JsonException jsonEx:
+                    statusCode = HttpStatusCode.BadRequest;
+                    message = $"Invalid JSON data: {jsonEx.Message}";
+                    break;
+                case BadHttpRequestException badHttpEx when badHttpEx.InnerException is JsonException jsonEx:
+                    statusCode = HttpStatusCode.BadRequest;
+                    message = $"Invalid JSON data: {jsonEx.Message}";
+                    break;
                 default:
                     statusCode = HttpStatusCode.InternalServerError;
                     message = "An unexpected error occurred. Please try again later.";

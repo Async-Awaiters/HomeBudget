@@ -1,6 +1,5 @@
 ﻿using HomeBudget.AuthService.EF.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HomeBudget.AuthService.EF.Data;
 

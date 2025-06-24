@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace HomeBudget.AuthService.Models
 {
     public class LoginRequest
     {
+        [JsonRequired]
         public required string Login { get; set; }
+        [JsonRequired]
         public required string Password { get; set; }
     }
 }

@@ -126,18 +126,14 @@ app.UseExceptionMiddleware();
 // Настраиваем Swagger и Scalar
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger(options =>
-    {
-        options.RouteTemplate = "openapi/{documentName}.json";
-        options.SerializeAsV2 = false;
-    });
+    app.UseSwagger(options => { options.RouteTemplate = "/openapi/{documentName}.json"; });
 
     // Настраиваем Scalar
     app.MapScalarApiReference(options =>
     {
         options
             .WithTitle("HomeBudget AuthService API")
-            .WithTheme(ScalarTheme.Moon)
+            .WithTheme(ScalarTheme.BluePlanet)
             .WithSidebar(true)
             .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
             .WithOpenApiRoutePattern("/openapi/v1.json");
