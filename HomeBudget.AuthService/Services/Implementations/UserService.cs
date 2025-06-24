@@ -25,7 +25,7 @@ namespace HomeBudget.AuthService.Services.Implementations
             _repository = repository;
             _logger = logger;
             _configuration = configuration;
-            int timeoutMs = configuration.GetValue<int>("Services:Timeouts:UserService", _defaultTimeout);
+            int timeoutMs = configuration.GetValue("Services:Timeouts:UserService", _defaultTimeout);
             _timeout = TimeSpan.FromMilliseconds(timeoutMs);
         }
 
@@ -42,7 +42,6 @@ namespace HomeBudget.AuthService.Services.Implementations
                     throw new DuplicateUserException("Login", request.Login);
                 }
 
-                // Проверка уникальности email
                 var existingUserByEmail = await _repository.GetByEmailAsync(request.Email, cts.Token);
                 if (existingUserByEmail != null)
                 {
@@ -72,7 +71,6 @@ namespace HomeBudget.AuthService.Services.Implementations
                 _logger.LogError(ex, "Failed to register user with login: {Login}", request.Login);
                 throw; // Перебрасываем исключение для обработки middleware
             }
-
         }
 
         public async Task<string> LoginAsync(LoginRequest request)

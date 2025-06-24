@@ -65,6 +65,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.ASCII.GetBytes(jwtSecret))
         };
     });
+
 builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -74,7 +75,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "HomeBudget AuthService API",
         Version = "v1",
-        Description = "API для аутентификации и управления пользователями в системе HomeBudget."
+        Description = "API для аутентификации и управления пользователями."
     });
 
     c.MapType<DateOnly>(() => new OpenApiSchema
@@ -131,12 +132,8 @@ if (app.Environment.IsDevelopment())
     // Настраиваем Scalar
     app.MapScalarApiReference(options =>
     {
-        options
-            .WithTitle("HomeBudget AuthService API")
-            .WithTheme(ScalarTheme.BluePlanet)
-            .WithSidebar(true)
-            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
-            .WithOpenApiRoutePattern("/openapi/v1.json");
+        options.Title = "HomeBudget AuthService API";
+        options.Theme = ScalarTheme.BluePlanet;
     });
 }
 
