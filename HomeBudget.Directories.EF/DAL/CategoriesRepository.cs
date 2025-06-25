@@ -1,5 +1,6 @@
 ﻿using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
+using HomeBudget.Directories.EF.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeBudget.Directories.EF.DAL
@@ -30,10 +31,10 @@ namespace HomeBudget.Directories.EF.DAL
 
         public async Task Create(Category category, CancellationToken cancellationToken)
         {
-            var currencyDb = _context.Categories.AnyAsync(x => String.Equals(x.Name, category.Name) && String.Equals(x.ParentId, category.ParentId) && String.Equals(x.UserId, category.UserId));
+            var currencyDb = _context.Categories.AnyAsync(x => string.Equals(x.Name, category.Name) && Equals(x.ParentId, category.ParentId) && Equals(x.UserId, category.UserId));
             if (currencyDb.Result)
             {
-                throw new Exception("Нет такой категории");
+                throw new EntityNotFoundException("Такая категория уже существует");
             }
 
             await _context.Categories.AddAsync(category);
@@ -48,18 +49,24 @@ namespace HomeBudget.Directories.EF.DAL
                 category.IsDeleted = true;
                 await _context.SaveChangesAsync();
             }
+            else
+            {
+                throw new EntityNotFoundException("Категория не найдена.");
+            }
         }
 
-        public async Task<bool> Update(Category category, CancellationToken cancellationToken)
+        public async Task Update(Category category, CancellationToken cancellationToken)
         {
-            var categoryBD = await _context.Categories.FindAsync(category.Id);
+            var categoryBD = await _context.Categories.FirstOrDefaultAsync(x => x.Id == category.Id);
             if (categoryBD != null)
             {
                 _context.Entry(categoryBD).CurrentValues.SetValues(category);
                 await _context.SaveChangesAsync();
-                return true;
             }
-            else return false;
+            else
+            {
+                throw new EntityNotFoundException("Категория не найдена.");
+            }
         }
 
         public void Dispose()

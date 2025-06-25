@@ -2,7 +2,7 @@ using HomeBudget.Directories;
 using HomeBudget.Directories.EF.DAL;
 using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
-using HomeBudget.Directories.Services.DTO;
+using HomeBudget.Directories.EF.Exceptions;
 using HomeBudget.Directories.Services.Implementations;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
@@ -95,15 +95,18 @@ app.MapGet("/api/categories/{id:guid}",
 });
 
 app.MapPost("/api/categories",
-    async Task<Results<Created<Category>, ValidationProblem>> (Category category, ICategoryService service) =>
+    async Task<Results<Created<Category>, BadRequest<string>>> (Category category, ICategoryService service) =>
     {
-        CreateCategoryDto categoryDto = new()
+        Category createdCategory;
+        try
         {
-            Name = category.Name,
-            ParentId = category.ParentId,
-            UserId = category.UserId
-        };
-        var createdCategory = await service.CreateCategoryAsync(categoryDto);
+            createdCategory = await service.CreateCategoryAsync(category);
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.BadRequest(ex.Message);
+        }
+
         return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
     })
 .WithTags("Categories")
@@ -123,11 +126,20 @@ app.MapPut("/api/categories/{id:guid}",
             return TypedResults.BadRequest("ID in route doesn't match ID in body");
         }
 
-        var updateResult = await service.UpdateCategoryAsync(category);
+        try
+        {
+            await service.UpdateCategoryAsync(category);
+        }
+        catch (EntityNotFoundException)
+        {
+            return TypedResults.NotFound();
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.BadRequest(ex.Message);
+        }
 
-        return updateResult
-            ? TypedResults.Ok()
-            : TypedResults.NotFound();
+        return TypedResults.Ok();
     })
 .WithTags("Categories")
 .WithOpenApi(operation => new(operation)
@@ -136,9 +148,21 @@ app.MapPut("/api/categories/{id:guid}",
     Description = "Обновляет категорию."
 });
 
-app.MapDelete("/api/categories/{id:guid}", async (Guid id, ICategoryService service) =>
+app.MapDelete("/api/categories/{id:guid}", async Task<Results<Ok, NotFound, ValidationProblem, BadRequest<string>>> (Guid id, ICategoryService service) =>
 {
-    await service.DeleteCategoryAsync(id);
+    try
+    {
+        await service.DeleteCategoryAsync(id);
+    }
+    catch (EntityNotFoundException)
+    {
+        return TypedResults.NotFound();
+    }
+    catch (Exception ex)
+    {
+        return TypedResults.BadRequest(ex.Message);
+    }
+
     return TypedResults.Ok();
 })
 .WithTags("Categories")
@@ -147,6 +171,8 @@ app.MapDelete("/api/categories/{id:guid}", async (Guid id, ICategoryService serv
     Summary = "Удаление заданной категории",
     Description = "Удаляет категорию."
 });
+
+// Эндпоинты для валют
 
 app.MapGet("/api/currencies", async (ICurrencyService service) =>
 {

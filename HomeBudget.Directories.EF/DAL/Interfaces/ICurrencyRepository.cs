@@ -2,8 +2,8 @@
 
 namespace HomeBudget.Directories.EF.DAL.Interfaces
 {
-    public interface ICurrencyRepository: IGetRepository<Currency>, ICreateRepository<Currency>, IUpdateRepository<Currency>, IDisposable
+    public interface ICurrencyRepository : IGetRepository<Currency>, IDisposable
     {
-        
+
     }
 }

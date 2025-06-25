@@ -2,6 +2,6 @@
 {
     public interface IUpdateRepository<TEntity>
     {
-        Task<bool> Update(TEntity entity, CancellationToken cancellationToken);
+        Task Update(TEntity entity, CancellationToken cancellationToken);
     }
 }

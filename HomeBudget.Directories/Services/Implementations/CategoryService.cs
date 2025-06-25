@@ -1,6 +1,5 @@
 ﻿using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
-using HomeBudget.Directories.Services.DTO;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,10 +12,7 @@ public class CategoryService : ICategoryService
     private readonly TimeSpan _timeout;
     private const int _defaultTimeout = 30000;
 
-    public CategoryService(
-            ICategoriesRepository repository,
-            ILogger<CategoryService> logger,
-            IConfiguration configuration)
+    public CategoryService(ICategoriesRepository repository, ILogger<CategoryService> logger, IConfiguration configuration)
     {
         _repository = repository;
         _logger = logger;
@@ -38,35 +34,51 @@ public class CategoryService : ICategoryService
         return await _repository.GetById(id, cts.Token);
     }
 
-    public async Task<Category> CreateCategoryAsync(CreateCategoryDto categoryDto)
+    public async Task<Category> CreateCategoryAsync(Category category)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Creating new category");
 
-        var category = new Category
+        try
         {
-            Name = categoryDto.Name.Trim(),
-            ParentId = categoryDto.ParentId,
-            UserId = categoryDto.UserId,
-            IsDeleted = false
-        };
+            await _repository.Create(category, cts.Token);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error creating category: {ErrorMessage}", ex.Message);
+            throw;
+        }
 
-        await _repository.Create(category, cts.Token);
         return category;
     }
 
-    public async Task<bool> UpdateCategoryAsync(Category category)
+    public async Task UpdateCategoryAsync(Category category)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Updating category {CategoryId}", category.Id);
-        var updated = await _repository.Update(category, cts.Token);
-        return updated;
+        try
+        {
+            await _repository.Update(category, cts.Token);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error updating category: {ErrorMessage}", ex.Message);
+            throw;
+        }
     }
 
     public async Task DeleteCategoryAsync(Guid id)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Deleting category {CategoryId}", id);
-        await _repository.Delete(id, cts.Token);
+        try
+        {
+            await _repository.Delete(id, cts.Token);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error deleting category: {ErrorMessage}", ex.Message);
+            throw;
+        }
     }
 }

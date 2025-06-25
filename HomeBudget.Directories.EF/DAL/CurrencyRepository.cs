@@ -26,30 +26,6 @@ namespace HomeBudget.Directories.EF.DAL
             return currency is not null ? currency : null;
         }
 
-        public async Task Create(Currency currency, CancellationToken cancellationToken)
-        {
-            var currencyDb = _context.Сurrencies.AnyAsync(cur => string.Equals(cur.Name, currency.Name) && string.Equals(cur.Code, currency.Code) && string.Equals(cur.Country, cur.Country));
-            if (currencyDb.Result)
-            {
-                throw new Exception("Нет такой валюты");
-            }
-
-            await _context.Сurrencies.AddAsync(currency);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<bool> Update(Currency currency, CancellationToken cancellationToken)
-        {
-            var currencyBD = await _context.Сurrencies.FindAsync(currency.Id);
-            if (currencyBD != null)
-            {
-                _context.Entry(currencyBD).CurrentValues.SetValues(currency);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            else return false;
-        }
-
         public void Dispose()
         {
             _context.Dispose();
