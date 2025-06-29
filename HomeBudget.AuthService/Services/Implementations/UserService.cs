@@ -57,7 +57,6 @@ namespace HomeBudget.AuthService.Services.Implementations
                     Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     RegDate = DateTime.UtcNow,
                     BirthDate = request.BirthDate,
-                    IsDeleted = false
                 };
 
                 await _repository.AddAsync(user, cts.Token);
