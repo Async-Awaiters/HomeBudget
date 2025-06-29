@@ -19,7 +19,6 @@ namespace HomeBudget.AuthService.Services.Implementations
         private readonly TimeSpan _timeout;
         private const int _defaultTimeout = 30000;
 
-
         public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration)
         {
             _repository = repository;
@@ -39,14 +38,14 @@ namespace HomeBudget.AuthService.Services.Implementations
                 if (existingUserByLogin != null)
                 {
                     _logger.LogWarning("Registration failed: Login '{Login}' is already taken.", request.Login);
-                    throw new DuplicateUserException("Login", request.Login);
+                    throw new DuplicateUserException(nameof(request.Login), request.Login);
                 }
 
                 var existingUserByEmail = await _repository.GetByEmailAsync(request.Email, cts.Token);
                 if (existingUserByEmail != null)
                 {
                     _logger.LogWarning("Registration failed: Email '{Email}' is already taken.", request.Email);
-                    throw new DuplicateUserException("Email", request.Email);
+                    throw new DuplicateUserException(nameof(request.Email), request.Email);
                 }
 
                 var user = new User
@@ -91,10 +90,6 @@ namespace HomeBudget.AuthService.Services.Implementations
                 _logger.LogInformation("User logged in: {Login}", user.Login);
                 return token;
             }
-            catch (UnauthorizedAccessException)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to login user: {Login}", request.Login);
@@ -115,17 +110,13 @@ namespace HomeBudget.AuthService.Services.Implementations
                     throw new KeyNotFoundException("User not found");
                 }
 
-                user.Email = request.Email ?? user.Email;
-                user.FirstName = request.FirstName ?? user.FirstName;
-                user.LastName = request.LastName ?? user.LastName;
-                user.BirthDate = request.BirthDate ?? user.BirthDate;
+                if (!string.IsNullOrWhiteSpace(request.Email)) user.Email = request.Email;
+                if (!string.IsNullOrWhiteSpace(request.FirstName)) user.FirstName = request.FirstName;
+                if (!string.IsNullOrWhiteSpace(request.LastName)) user.LastName = request.LastName;
+                if (request.BirthDate.HasValue) user.BirthDate = request.BirthDate;
 
                 await _repository.UpdateAsync(user, cts.Token);
                 _logger.LogInformation("User updated: {Login}", user.Login);
-            }
-            catch (KeyNotFoundException)
-            {
-                throw; // Уже обработано в if выше, просто перебрасываем
             }
             catch (Exception ex)
             {
@@ -194,9 +185,9 @@ namespace HomeBudget.AuthService.Services.Implementations
                 {
                     Subject = new ClaimsIdentity(new[]
                     {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Login)
-            }),
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                        new Claim(ClaimTypes.Name, user.Login)
+                    }),
                     Expires = DateTime.UtcNow.AddMinutes(lifetime),
                     Issuer = jwtIssuer,
                     Audience = jwtAudience,

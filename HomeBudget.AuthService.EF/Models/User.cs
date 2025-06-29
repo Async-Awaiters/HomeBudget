@@ -1,4 +1,5 @@
 ﻿using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
@@ -9,19 +10,19 @@ namespace HomeBudget.AuthService.EF.Models
     {
         [SwaggerIgnore]
         public Guid Id { get; set; }
-        [JsonRequired]
+        [Required]
         public required string Login { get; set; }
-        [JsonRequired]
+        [Required]
         public required string Email { get; set; }
-        [JsonRequired]
+        [Required]
         public required string FirstName { get; set; }
-        [JsonRequired]
+        [Required]
         public required string LastName { get; set; }
-        [JsonRequired]
+        [Required]
         public required string Password { get; set; } // Хэш пароля
         public DateTime RegDate { get; set; }
         public DateOnly? BirthDate { get; set; }
-        [JsonRequired]
+        [Required]
         public bool IsDeleted { get; set; }
     }
 }

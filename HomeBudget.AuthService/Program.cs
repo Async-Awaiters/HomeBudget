@@ -133,7 +133,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options =>
     {
         options.Title = "HomeBudget AuthService API";
-        options.Theme = ScalarTheme.BluePlanet;
+        options.Theme = ScalarTheme.Laserwave;
     });
 }
 
