@@ -22,7 +22,6 @@ namespace HomeBudget.AuthService.EF.Models
         public required string Password { get; set; } // Хэш пароля
         public DateTime RegDate { get; set; }
         public DateOnly? BirthDate { get; set; }
-        [Required]
         public bool IsDeleted { get; set; }
     }
 }
