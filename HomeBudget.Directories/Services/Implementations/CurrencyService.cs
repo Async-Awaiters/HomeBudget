@@ -2,7 +2,6 @@
 using HomeBudget.Directories.EF.DAL.Models;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace HomeBudget.Directories.Services.Implementations;
 
@@ -20,7 +19,7 @@ public class CurrencyService : ICurrencyService
     {
         _repository = repository;
         _logger = logger;
-        int timeoutMs = configuration.GetValue<int>("Services:Timeouts:CurrencyService", _defaultTimeout);
+        int timeoutMs = configuration.GetValue("Services:Timeouts:CurrencyService", _defaultTimeout);
         _timeout = TimeSpan.FromMilliseconds(timeoutMs);
     }
 

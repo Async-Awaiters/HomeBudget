@@ -1,10 +1,20 @@
-﻿namespace HomeBudget.Directories.EF.DAL.Models
+﻿using System.Text.Json.Serialization;
+using Swashbuckle.AspNetCore.Annotations;
+
+namespace HomeBudget.Directories.EF.DAL.Models
 {
     public class Currency
     {
+        [SwaggerIgnore]
         public Guid Id { get; set; }
-        public string Name { get; set; }
-        public string Code { get; set; }
-        public string Country { get; set; }
+
+        [JsonRequired]
+        public required string Name { get; set; }
+
+        [JsonRequired]
+        public required string Code { get; set; }
+
+        [JsonRequired]
+        public required string Country { get; set; }
     }
 }

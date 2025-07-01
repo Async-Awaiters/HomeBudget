@@ -2,7 +2,7 @@ using HomeBudget.Directories;
 using HomeBudget.Directories.EF.DAL;
 using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
-using HomeBudget.Directories.Services.DTO;
+using HomeBudget.Directories.EF.Exceptions;
 using HomeBudget.Directories.Services.Implementations;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
@@ -33,6 +33,13 @@ if (builder.Environment.IsDevelopment())
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
+        c.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Title = "HomeBudget Directories API",
+            Version = "v1",
+            Description = "API для работы со справочниками."
+        });
+
         c.MapType<Guid>(() => new OpenApiSchema
         {
             Type = "string",
@@ -46,47 +53,72 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger(options =>
-    {
-        options.RouteTemplate = "/openapi/{documentName}.json";
-    });
+    app.UseSwagger(options => { options.RouteTemplate = "/openapi/{documentName}.json"; });
     app.MapScalarApiReference(options =>
     {
         options.Title = "HomeBudget API";
-        options.ShowSidebar = true;
+        options.Theme = ScalarTheme.BluePlanet;
     });
 }
 
 app.UseHttpsRedirection();
 
 // Эндпоинты для категорий
+
 app.MapGet("/api/categories", async (ICategoryService service) =>
 {
     var categories = await service.GetAllCategoriesAsync();
-    return TypedResults.Ok(categories ?? Enumerable.Empty<Categories>()); // Явно возвращаем пустой массив
+    return TypedResults.Ok(categories); // Явно возвращаем пустой массив, если categories равно null
+})
+.WithTags("Categories")
+.WithOpenApi(operation => new(operation)
+{
+    Summary = "Получение всех категорий",
+    Description = "Возвращает все категории или пустой массив, если список категорий пуст."
 });
 
-app.MapGet("/api/category/{id:guid}",
-    async Task<Results<Ok<Categories>, NotFound>>
-        (Guid id, ICategoryService service) =>
+app.MapGet("/api/categories/{id:guid}",
+    async Task<Results<Ok<Category>, NotFound>> (Guid id, ICategoryService service) =>
     {
         var category = await service.GetCategoryByIdAsync(id);
         return category is not null
             ? TypedResults.Ok(category)
             : TypedResults.NotFound();
-    });
+    })
+.WithTags("Categories")
+.WithOpenApi(operation =>
+{
+    operation.Summary = "Получение категории по идентификатору";
+    operation.Description = "Возвращает категорию по индентификатору.";
 
-app.MapPost("/api/category",
-    async Task<Results<Created<Categories>, ValidationProblem>>
-        (CreateCategoryDto category, ICategoryService service) =>
+    return operation;
+});
+
+app.MapPost("/api/categories",
+    async Task<Results<Created<Category>, BadRequest<string>>> (Category category, ICategoryService service) =>
     {
-        var createdCategory = await service.CreateCategoryAsync(category);
-        return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
-    });
+        Category createdCategory;
+        try
+        {
+            createdCategory = await service.CreateCategoryAsync(category);
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.BadRequest(ex.Message);
+        }
 
-app.MapPut("/api/category/{id:guid}",
-    async Task<Results<NoContent, NotFound, ValidationProblem, BadRequest<string>>>
-        (Guid id, Categories category, ICategoryService service) =>
+        return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
+    })
+.WithTags("Categories")
+.WithOpenApi(operation => new(operation)
+{
+    Summary = "Создание категории",
+    Description = "Добавляет новую категорию."
+});
+
+app.MapPut("/api/categories/{id:guid}",
+    async Task<Results<Ok, NotFound, ValidationProblem, BadRequest<string>>>
+        (Guid id, Category category, ICategoryService service) =>
     {
         // Проверка соответствия ID в маршруте и теле запроса
         if (id != category.Id)
@@ -94,36 +126,79 @@ app.MapPut("/api/category/{id:guid}",
             return TypedResults.BadRequest("ID in route doesn't match ID in body");
         }
 
-        var updateResult = await service.UpdateCategoryAsync(category);
+        try
+        {
+            await service.UpdateCategoryAsync(category);
+        }
+        catch (EntityNotFoundException)
+        {
+            return TypedResults.NotFound();
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.BadRequest(ex.Message);
+        }
 
-        return updateResult
-            ? TypedResults.NoContent()
-            : TypedResults.NotFound();
-    });
-
-app.MapDelete("/api/category/{id:guid}", async (
-    Guid id,
-    ICategoryService service) =>
+        return TypedResults.Ok();
+    })
+.WithTags("Categories")
+.WithOpenApi(operation => new(operation)
 {
-    await service.DeleteCategoryAsync(id);
-    return TypedResults.NoContent();
+    Summary = "Обновление заданной категории",
+    Description = "Обновляет категорию."
 });
 
-app.MapGet("/api/currencies", async (
-    ICurrencyService service) =>
+app.MapDelete("/api/categories/{id:guid}", async Task<Results<Ok, NotFound, ValidationProblem, BadRequest<string>>> (Guid id, ICategoryService service) =>
 {
-    var currencies = await service.GetAllCurrenciesAsync();
-    return TypedResults.Ok(currencies);
-});
-
-app.MapGet("/api/currency/{id:guid}",
-    async Task<Results<Ok<Currency>, NotFound>>
-        (Guid id, ICurrencyService service) =>
+    try
     {
-        var currency = await service.GetCurrencyByIdAsync(id);
+        await service.DeleteCategoryAsync(id);
+    }
+    catch (EntityNotFoundException)
+    {
+        return TypedResults.NotFound();
+    }
+    catch (Exception ex)
+    {
+        return TypedResults.BadRequest(ex.Message);
+    }
+
+    return TypedResults.Ok();
+})
+.WithTags("Categories")
+.WithOpenApi(operation => new(operation)
+{
+    Summary = "Удаление заданной категории",
+    Description = "Удаляет категорию."
+});
+
+// Эндпоинты для валют
+
+app.MapGet("/api/currencies", async (ICurrencyService service) =>
+{
+    IEnumerable<Currency> currencies = await service.GetAllCurrenciesAsync();
+    return TypedResults.Ok(currencies);
+})
+.WithTags("Currencies")
+.WithOpenApi(operation => new(operation)
+{
+    Summary = "Получение полного списка валют",
+    Description = "Возвращает полный список валют."
+});
+
+app.MapGet("/api/currencies/{id:guid}",
+    async Task<Results<Ok<Currency>, NotFound>> (Guid id, ICurrencyService service) =>
+    {
+        Currency? currency = await service.GetCurrencyByIdAsync(id);
         return currency is not null
             ? TypedResults.Ok(currency)
             : TypedResults.NotFound();
-    });
+    })
+.WithTags("Currencies")
+.WithOpenApi(operation => new(operation)
+{
+    Summary = "Получение конкретной валюты",
+    Description = "Возвращает конкретную валюту."
+});
 
 app.Run();
