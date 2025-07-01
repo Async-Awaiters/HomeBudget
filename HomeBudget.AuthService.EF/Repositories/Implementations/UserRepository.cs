@@ -38,13 +38,13 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(ct);
     }
 
-    public async Task AddAsync(User user, CancellationToken ct)
+    public async Task AddUserAsync(User user, CancellationToken ct)
     {
         await _context.Users.AddAsync(user, ct);
         await _context.SaveChangesAsync(ct);
     }
 
-    public async Task UpdateAsync(User user, CancellationToken ct)
+    public async Task UpdateUserAsync(User user, CancellationToken ct)
     {
         var userToUpdate = await _context.Users
             .Where(u => u.Id == user.Id && !u.IsDeleted)

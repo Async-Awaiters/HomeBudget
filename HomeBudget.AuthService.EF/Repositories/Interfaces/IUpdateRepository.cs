@@ -2,6 +2,6 @@
 {
     public interface IUpdateRepository<TEntity>
     {
-        Task UpdateAsync(TEntity entity, CancellationToken ct);
+        Task UpdateUserAsync(TEntity entity, CancellationToken ct);
     }
 }

@@ -28,7 +28,7 @@ namespace HomeBudget.AuthService.Services.Implementations
             _timeout = TimeSpan.FromMilliseconds(timeoutMs);
         }
 
-        public async Task<UserDto> RegisterAsync(RegisterRequest request)
+        public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
         {
             using var cts = new CancellationTokenSource(_timeout);
 
@@ -59,10 +59,25 @@ namespace HomeBudget.AuthService.Services.Implementations
                     BirthDate = request.BirthDate,
                 };
 
-                await _repository.AddAsync(user, cts.Token);
+                await _repository.AddUserAsync(user, cts.Token);
                 _logger.LogInformation("User registered: {Login}", user.Login);
 
-                return MapToDto(user);
+                var response = new RegisterResponse
+                {
+                    Success = true,
+                    User = new UserData
+                    {
+                        Id = user.Id,
+                        Login = user.Login,
+                        Email = user.Email,
+                        FirstName = user.FirstName,
+                        LastName = user.LastName,
+                        RegDate = user.RegDate,
+                        BirthDate = user.BirthDate
+                    }
+                };
+
+                return response;
             }
             catch (Exception ex)
             {
@@ -114,7 +129,7 @@ namespace HomeBudget.AuthService.Services.Implementations
                 if (!string.IsNullOrWhiteSpace(request.LastName)) user.LastName = request.LastName;
                 if (request.BirthDate.HasValue) user.BirthDate = request.BirthDate;
 
-                await _repository.UpdateAsync(user, cts.Token);
+                await _repository.UpdateUserAsync(user, cts.Token);
                 _logger.LogInformation("User updated: {Login}", user.Login);
             }
             catch (Exception ex)
@@ -138,17 +153,6 @@ namespace HomeBudget.AuthService.Services.Implementations
                 throw;
             }
         }
-
-        private UserDto MapToDto(User user) => new UserDto
-        {
-            Id = user.Id,
-            Login = user.Login,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            RegDate = user.RegDate,
-            BirthDate = user.BirthDate
-        };
 
         private string GenerateJwtToken(User user)
         {

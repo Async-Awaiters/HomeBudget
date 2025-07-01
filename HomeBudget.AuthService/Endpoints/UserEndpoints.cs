@@ -12,8 +12,8 @@ public static class UserEndpoints
     {
         app.MapPost("/api/register", async (IUserService service, RegisterRequest request) =>
         {
-            UserDto user = await service.RegisterAsync(request);
-            return TypedResults.Ok(user);
+            RegisterResponse response = await service.RegisterAsync(request);
+            return TypedResults.Ok(response);
         })
         .WithTags("Register")
         .WithOpenApi(operation => new(operation)

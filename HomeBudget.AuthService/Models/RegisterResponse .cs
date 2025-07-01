@@ -3,7 +3,15 @@ using System.Text.Json.Serialization;
 
 namespace HomeBudget.AuthService.Models
 {
-    public class UserDto
+    public class RegisterResponse
+    {
+        [JsonPropertyName("success")]
+        public required bool Success { get; set; }
+
+        [JsonPropertyName("user")]
+        public required UserData User { get; set; }
+    }
+    public class UserData
     {
         [SwaggerIgnore]
         public Guid Id { get; set; }
