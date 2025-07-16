@@ -1,6 +1,7 @@
 ﻿using HomeBudget.AuthService.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
 
@@ -60,6 +61,10 @@ namespace HomeBudget.AuthService.Middleware
                 case BadHttpRequestException badHttpEx when badHttpEx.InnerException is JsonException jsonEx:
                     statusCode = HttpStatusCode.BadRequest;
                     message = $"Invalid JSON data: {jsonEx.Message}";
+                    break;
+                case ValidationException valEx:
+                    statusCode = HttpStatusCode.BadRequest;
+                    message = valEx.Message;
                     break;
                 default:
                     statusCode = HttpStatusCode.InternalServerError;

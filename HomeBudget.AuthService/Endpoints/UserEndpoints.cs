@@ -15,11 +15,12 @@ public static class UserEndpoints
             RegisterResponse response = await service.RegisterAsync(request);
             return TypedResults.Ok(response);
         })
+        .AllowAnonymous()
         .WithTags("Register")
         .WithOpenApi(operation => new(operation)
         {
             Summary = "Регистрация нового пользователя",
-            Description = "Регистрирует пользователя и возвращает его представление."
+            Description = "Регистрирует пользователя и возвращает его представление.",
         });
 
         app.MapPost("/api/login", async (IUserService service, LoginRequest request, HttpContext context) =>
@@ -28,11 +29,12 @@ public static class UserEndpoints
             context.Response.Headers.Append("Authorization", $"Bearer {token}");
             return TypedResults.Ok();
         })
+        .AllowAnonymous()
         .WithTags("Login")
         .WithOpenApi(operation => new(operation)
         {
             Summary = "Логин",
-            Description = "Возвращает JWT в заголовке ответа."
+            Description = "Возвращает JWT в заголовке ответа.",
         });
 
         app.MapPut("/api/users", async (IUserService service, UpdateRequest request, HttpContext context) =>

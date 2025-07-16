@@ -7,6 +7,7 @@ using HomeBudget.AuthService.Services.Implementations;
 using HomeBudget.AuthService.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -21,6 +22,17 @@ builder.Services.AddLogging(logging =>
 {
     logging.AddConsole();
     logging.AddDebug();
+});
+
+// Настройка Cors
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()    // Разрешает все источники (origins)
+              .AllowAnyHeader()    // Разрешает все заголовки
+              .AllowAnyMethod();   // Разрешает все HTTP-методы (GET, POST, OPTIONS и т.д.)
+    });
 });
 
 // Подключение к БД
@@ -119,8 +131,9 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
 var app = builder.Build();
+
+app.UseCors("AllowAll");
 
 app.UseExceptionMiddleware();
 
