@@ -20,7 +20,7 @@ public static class UserEndpoints
         .WithOpenApi(operation => new(operation)
         {
             Summary = "Регистрация нового пользователя",
-            Description = "Регистрирует пользователя и возвращает его представление.",
+            Description = "Регистрирует пользователя и возвращает его представление."
         });
 
         app.MapPost("/api/login", async (IUserService service, LoginRequest request, HttpContext context) =>
@@ -34,7 +34,7 @@ public static class UserEndpoints
         .WithOpenApi(operation => new(operation)
         {
             Summary = "Логин",
-            Description = "Возвращает JWT в заголовке ответа.",
+            Description = "Возвращает JWT в заголовке ответа."
         });
 
         app.MapPut("/api/users", async (IUserService service, UpdateRequest request, HttpContext context) =>
