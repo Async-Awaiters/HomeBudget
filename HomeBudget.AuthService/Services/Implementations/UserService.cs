@@ -3,6 +3,7 @@ using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Exceptions;
 using HomeBudget.AuthService.Models;
 using HomeBudget.AuthService.Services.Interfaces;
+using HomeBudget.AuthService.ValidationHelpers.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
@@ -17,14 +18,16 @@ namespace HomeBudget.AuthService.Services.Implementations
         private readonly IUserRepository _repository;
         private readonly ILogger<UserService> _logger;
         private readonly IConfiguration _configuration;
+        private readonly IRequestValidator<UpdateRequest> _updateValidator;
         private readonly TimeSpan _timeout;
         private const int _defaultTimeout = 30000;
 
-        public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration)
+        public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration, IRequestValidator<UpdateRequest> updateValidator)
         {
             _repository = repository;
             _logger = logger;
             _configuration = configuration;
+            _updateValidator = updateValidator;
             int timeoutMs = configuration.GetValue("Services:Timeouts:UserService", _defaultTimeout);
             _timeout = TimeSpan.FromMilliseconds(timeoutMs);
         }
@@ -134,17 +137,16 @@ namespace HomeBudget.AuthService.Services.Implementations
         {
             using var cts = new CancellationTokenSource(_timeout);
 
-            if (string.IsNullOrWhiteSpace(request.Email) &&
-                string.IsNullOrWhiteSpace(request.FirstName) &&
-                string.IsNullOrWhiteSpace(request.LastName) &&
-                !request.BirthDate.HasValue)
-            {
-                _logger.LogWarning("Update request is empty or contains only empty strings for user ID: {UserId}", userId);
-                throw new ArgumentException("Update request cannot be empty or contain only empty strings. At least one field must be provided with a valid value.", nameof(request));
-            }
-
             try
             {
+                var validFields = _updateValidator.ValidateRequest(request);
+
+                if (!validFields.Any())
+                {
+                    _logger.LogWarning("Update request is empty or contains only empty strings for user ID: {UserId}", userId);
+                    throw new ArgumentException("Update request cannot be empty or contain only empty strings. At least one field must be provided with a valid value.", nameof(request));
+                }
+
                 var user = await _repository.GetByIdAsync(userId, cts.Token);
                 if (user == null)
                 {
@@ -152,10 +154,24 @@ namespace HomeBudget.AuthService.Services.Implementations
                     throw new KeyNotFoundException("User not found");
                 }
 
-                if (!string.IsNullOrWhiteSpace(request.Email)) user.Email = request.Email;
-                if (!string.IsNullOrWhiteSpace(request.FirstName)) user.FirstName = request.FirstName;
-                if (!string.IsNullOrWhiteSpace(request.LastName)) user.LastName = request.LastName;
-                if (request.BirthDate.HasValue) user.BirthDate = request.BirthDate;
+                foreach (var field in validFields)
+                {
+                    switch (field.Key)
+                    {
+                        case "Email":
+                            user.Email = (string)field.Value!;
+                            break;
+                        case "FirstName":
+                            user.FirstName = (string)field.Value!;
+                            break;
+                        case "LastName":
+                            user.LastName = (string)field.Value!;
+                            break;
+                        case "BirthDate":
+                            user.BirthDate = (DateOnly?)field.Value;
+                            break;
+                    }
+                }
 
                 await _repository.UpdateUserAsync(user, cts.Token);
                 _logger.LogInformation("User updated: {Login}", user.Login);

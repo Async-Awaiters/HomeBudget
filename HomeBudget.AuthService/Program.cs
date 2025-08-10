@@ -3,8 +3,11 @@ using HomeBudget.AuthService.EF.Repositories;
 using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Endpoints;
 using HomeBudget.AuthService.Middleware;
+using HomeBudget.AuthService.Models;
 using HomeBudget.AuthService.Services.Implementations;
 using HomeBudget.AuthService.Services.Interfaces;
+using HomeBudget.AuthService.ValidationHelpers.Implementations;
+using HomeBudget.AuthService.ValidationHelpers.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -29,9 +32,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()    // Разрешает все источники (origins)
-              .AllowAnyHeader()    // Разрешает все заголовки
-              .AllowAnyMethod();   // Разрешает все HTTP-методы (GET, POST, OPTIONS и т.д.)
+        policy.AllowAnyOrigin()   // Разрешает все источники (origins)
+              .AllowAnyHeader()   // Разрешает все заголовки
+              .AllowAnyMethod()   // Разрешает все HTTP-методы (GET, POST, OPTIONS и т.д.)
+              .WithExposedHeaders("Authorization", "X-Custom-Header");
     });
 });
 
@@ -42,6 +46,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Репозитории и сервисы
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRequestValidator<UpdateRequest>, UpdateRequestValidator>();
 
 // Аутентификация JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
