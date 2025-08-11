@@ -3,19 +3,35 @@ using HomeBudget.Directories.EF.DAL;
 using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
 using HomeBudget.Directories.EF.Exceptions;
+using HomeBudget.Directories.Endpoints;
 using HomeBudget.Directories.Services.Implementations;
 using HomeBudget.Directories.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHostedService<Worker>();
+
+// Настройка Cors
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()   // Разрешает все источники (origins)
+              .AllowAnyHeader()   // Разрешает все заголовки
+              .AllowAnyMethod()   // Разрешает все HTTP-методы (GET, POST, OPTIONS и т.д.)
+              .WithExposedHeaders("Authorization", "X-Custom-Header");
+    });
+});
 
 builder.Services.AddDbContext<DirectoriesContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("postgreSQL")));
@@ -24,9 +40,46 @@ builder.Services.AddDbContext<DirectoriesContext>(options =>
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 
-// Регистрация заглушек репозиториев
+// Регистрация репозиториев
 builder.Services.AddScoped<ICategoriesRepository, CategoriesRepository>();
 builder.Services.AddScoped<ICurrencyRepository, CurrencyRepository>();
+
+// Аутентификация JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwtSecret = builder.Configuration["Jwt:Secret"];
+        if (string.IsNullOrEmpty(jwtSecret))
+        {
+            throw new InvalidOperationException("JWT Secret is not configured. Please set 'Jwt:Secret' in appsettings.json.");
+        }
+
+        var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+        if (string.IsNullOrEmpty(jwtIssuer))
+        {
+            throw new InvalidOperationException("JWT Issuer is not configured. Please set 'Jwt:Issuer' in appsettings.json.");
+        }
+
+        var jwtAudience = builder.Configuration["Jwt:Audience"];
+        if (string.IsNullOrEmpty(jwtAudience))
+        {
+            throw new InvalidOperationException("JWT Audience is not configured. Please set 'Jwt:Audience' in appsettings.json.");
+        }
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.ASCII.GetBytes(jwtSecret))
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 if (builder.Environment.IsDevelopment())
 {
@@ -46,10 +99,39 @@ if (builder.Environment.IsDevelopment())
             Format = "uuid",
             Example = OpenApiAnyFactory.CreateFromJson("\"00000000-0000-0000-0000-000000000000\"")
         });
+
+        // Добавляем описание авторизации для Swagger
+        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "Bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Введите JWT-токен в формате: Bearer {token}"
+        });
+
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+        });
     });
 }
 
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -63,142 +145,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Эндпоинты для категорий
-
-app.MapGet("/api/categories", async (ICategoryService service) =>
-{
-    var categories = await service.GetAllCategoriesAsync();
-    return TypedResults.Ok(categories); // Явно возвращаем пустой массив, если categories равно null
-})
-.WithTags("Categories")
-.WithOpenApi(operation => new(operation)
-{
-    Summary = "Получение всех категорий",
-    Description = "Возвращает все категории или пустой массив, если список категорий пуст."
-});
-
-app.MapGet("/api/categories/{id:guid}",
-    async Task<Results<Ok<Category>, NotFound>> (Guid id, ICategoryService service) =>
-    {
-        var category = await service.GetCategoryByIdAsync(id);
-        return category is not null
-            ? TypedResults.Ok(category)
-            : TypedResults.NotFound();
-    })
-.WithTags("Categories")
-.WithOpenApi(operation =>
-{
-    operation.Summary = "Получение категории по идентификатору";
-    operation.Description = "Возвращает категорию по индентификатору.";
-
-    return operation;
-});
-
-app.MapPost("/api/categories",
-    async Task<Results<Created<Category>, BadRequest<string>>> (Category category, ICategoryService service) =>
-    {
-        Category createdCategory;
-        try
-        {
-            createdCategory = await service.CreateCategoryAsync(category);
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.BadRequest(ex.Message);
-        }
-
-        return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
-    })
-.WithTags("Categories")
-.WithOpenApi(operation => new(operation)
-{
-    Summary = "Создание категории",
-    Description = "Добавляет новую категорию."
-});
-
-app.MapPut("/api/categories/{id:guid}",
-    async Task<Results<Ok, NotFound, ValidationProblem, BadRequest<string>>>
-        (Guid id, Category category, ICategoryService service) =>
-    {
-        // Проверка соответствия ID в маршруте и теле запроса
-        if (id != category.Id)
-        {
-            return TypedResults.BadRequest("ID in route doesn't match ID in body");
-        }
-
-        try
-        {
-            await service.UpdateCategoryAsync(category);
-        }
-        catch (EntityNotFoundException)
-        {
-            return TypedResults.NotFound();
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.BadRequest(ex.Message);
-        }
-
-        return TypedResults.Ok();
-    })
-.WithTags("Categories")
-.WithOpenApi(operation => new(operation)
-{
-    Summary = "Обновление заданной категории",
-    Description = "Обновляет категорию."
-});
-
-app.MapDelete("/api/categories/{id:guid}", async Task<Results<Ok, NotFound, ValidationProblem, BadRequest<string>>> (Guid id, ICategoryService service) =>
-{
-    try
-    {
-        await service.DeleteCategoryAsync(id);
-    }
-    catch (EntityNotFoundException)
-    {
-        return TypedResults.NotFound();
-    }
-    catch (Exception ex)
-    {
-        return TypedResults.BadRequest(ex.Message);
-    }
-
-    return TypedResults.Ok();
-})
-.WithTags("Categories")
-.WithOpenApi(operation => new(operation)
-{
-    Summary = "Удаление заданной категории",
-    Description = "Удаляет категорию."
-});
-
-// Эндпоинты для валют
-
-app.MapGet("/api/currencies", async (ICurrencyService service) =>
-{
-    IEnumerable<Currency> currencies = await service.GetAllCurrenciesAsync();
-    return TypedResults.Ok(currencies);
-})
-.WithTags("Currencies")
-.WithOpenApi(operation => new(operation)
-{
-    Summary = "Получение полного списка валют",
-    Description = "Возвращает полный список валют."
-});
-
-app.MapGet("/api/currencies/{id:guid}",
-    async Task<Results<Ok<Currency>, NotFound>> (Guid id, ICurrencyService service) =>
-    {
-        Currency? currency = await service.GetCurrencyByIdAsync(id);
-        return currency is not null
-            ? TypedResults.Ok(currency)
-            : TypedResults.NotFound();
-    })
-.WithTags("Currencies")
-.WithOpenApi(operation => new(operation)
-{
-    Summary = "Получение конкретной валюты",
-    Description = "Возвращает конкретную валюту."
-});
+app.MapCurrencyEndpoints();
+app.MapCategoryEndpoints();
 
 app.Run();

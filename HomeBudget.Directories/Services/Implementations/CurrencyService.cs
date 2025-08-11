@@ -23,7 +23,7 @@ public class CurrencyService : ICurrencyService
         _timeout = TimeSpan.FromMilliseconds(timeoutMs);
     }
 
-    public async Task<IEnumerable<Currency>> GetAllCurrenciesAsync()
+    public async Task<IEnumerable<Currency>> GetAllCurrenciesAsync(Guid userId)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Getting all currencies");

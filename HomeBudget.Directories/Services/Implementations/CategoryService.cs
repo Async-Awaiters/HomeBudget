@@ -20,27 +20,28 @@ public class CategoryService : ICategoryService
         _timeout = TimeSpan.FromMilliseconds(timeoutMs);
     }
 
-    public async Task<IEnumerable<Category>> GetAllCategoriesAsync()
+    public async Task<IEnumerable<Category>> GetAllCategoriesAsync(Guid userId)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Getting all categories");
-        return await _repository.GetAll(cts.Token).ToListAsync();
+        return await _repository.GetAll(userId, cts.Token).ToListAsync();
     }
 
-    public async Task<Category?> GetCategoryByIdAsync(Guid id)
+    public async Task<Category?> GetCategoryByIdAsync(Guid userId, Guid id)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogDebug("Getting category by ID: {CategoryId}", id);
-        return await _repository.GetById(id, cts.Token);
+        return await _repository.GetById(userId, id, cts.Token);
     }
 
-    public async Task<Category> CreateCategoryAsync(Category category)
+    public async Task<Category> CreateCategoryAsync(Guid userId, Category category)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Creating new category");
 
         try
         {
+            category.UserId = userId;
             await _repository.Create(category, cts.Token);
         }
         catch (Exception ex)
@@ -52,13 +53,13 @@ public class CategoryService : ICategoryService
         return category;
     }
 
-    public async Task UpdateCategoryAsync(Category category)
+    public async Task UpdateCategoryAsync(Guid userId, Guid id, Category category)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Updating category {CategoryId}", category.Id);
         try
         {
-            await _repository.Update(category, cts.Token);
+            await _repository.Update(userId, id, category, cts.Token);
         }
         catch (Exception ex)
         {
@@ -67,13 +68,13 @@ public class CategoryService : ICategoryService
         }
     }
 
-    public async Task DeleteCategoryAsync(Guid id)
+    public async Task DeleteCategoryAsync(Guid userId, Guid id)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Deleting category {CategoryId}", id);
         try
         {
-            await _repository.Delete(id, cts.Token);
+            await _repository.Delete(userId, id, cts.Token);
         }
         catch (Exception ex)
         {
