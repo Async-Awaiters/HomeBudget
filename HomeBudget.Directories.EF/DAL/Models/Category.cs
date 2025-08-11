@@ -13,11 +13,11 @@ namespace HomeBudget.Directories.EF.DAL.Models
         [JsonRequired]
         public required string Name { get; set; }
 
-        [JsonRequired]
+        [SwaggerIgnore]
         public bool IsDeleted { get; set; }
 
         public Guid? ParentId { get; set; }
-
+        [SwaggerIgnore]
         public Guid? UserId { get; set; }
     }
 }

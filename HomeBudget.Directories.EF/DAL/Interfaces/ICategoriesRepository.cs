@@ -2,7 +2,7 @@
 
 namespace HomeBudget.Directories.EF.DAL.Interfaces
 {
-    public interface ICategoriesRepository : IGetRepository<Category>, ICreateRepository<Category>, IUpdateRepository<Category>, IDeleteRepository<Category>, IDisposable
+    public interface ICategoriesRepository : IGetByUserIdRepository<Category>, ICreateRepository<Category>, IUpdateByUserIdRepository<Category>, IDeleteByUserIdRepository<Category>, IDisposable
     {
 
     }

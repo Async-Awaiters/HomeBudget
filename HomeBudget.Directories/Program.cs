@@ -130,6 +130,8 @@ if (builder.Environment.IsDevelopment())
 
 var app = builder.Build();
 
+app.UseCors("AllowAll");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
