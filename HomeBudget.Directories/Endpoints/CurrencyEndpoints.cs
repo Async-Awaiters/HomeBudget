@@ -3,7 +3,6 @@ using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
-using System.Security.Claims;
 
 namespace HomeBudget.Directories.Endpoints
 {

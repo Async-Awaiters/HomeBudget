@@ -1,5 +1,4 @@
-﻿using HomeBudget.Directories.EF.DAL.Models;
-using HomeBudget.Directories.Models.Categories.Requests;
+﻿using HomeBudget.Directories.Models.Categories.Requests;
 using HomeBudget.Directories.Models.Categories.Responses;
 
 namespace HomeBudget.Directories.Services.Interfaces;

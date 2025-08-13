@@ -1,5 +1,4 @@
-﻿using HomeBudget.Directories.EF.Exceptions;
-using HomeBudget.Directories.Models.Categories.Requests;
+﻿using HomeBudget.Directories.Models.Categories.Requests;
 using HomeBudget.Directories.Models.Categories.Responses;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
