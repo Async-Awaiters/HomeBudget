@@ -1,5 +1,6 @@
-﻿using HomeBudget.Directories.EF.DAL.Models;
-using HomeBudget.Directories.EF.Exceptions;
+﻿using HomeBudget.Directories.EF.Exceptions;
+using HomeBudget.Directories.Models.Categories.Requests;
+using HomeBudget.Directories.Models.Categories.Responses;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -28,7 +29,7 @@ namespace HomeBudget.Directories.Endpoints
             });
 
             app.MapGet("/api/categories/{id:guid}",
-                async Task<Results<Ok<Category>, NotFound>> (Guid id, ICategoryService service, HttpContext context) =>
+                async Task<Results<Ok<CategoryResponse>, NotFound>> (Guid id, ICategoryService service, HttpContext context) =>
                 {
                     var userId = GetUserId(context);
                     var category = await service.GetCategoryByIdAsync(userId, id);
@@ -47,19 +48,10 @@ namespace HomeBudget.Directories.Endpoints
             });
 
             app.MapPost("/api/categories",
-                async Task<Results<Created<Category>, BadRequest<string>>> (Category category, ICategoryService service, HttpContext context) =>
+                async Task<Created<CategoryResponse>> (CreateCategoryRequest categoryRequest, ICategoryService service, HttpContext context) =>
                 {
-                    Category createdCategory;
-                    try
-                    {
-                        var userId = GetUserId(context);
-                        createdCategory = await service.CreateCategoryAsync(userId, category);
-                    }
-                    catch (Exception ex)
-                    {
-                        return TypedResults.BadRequest(ex.Message);
-                    }
-
+                    var userId = GetUserId(context);
+                    var createdCategory = await service.CreateCategoryAsync(userId, categoryRequest);
                     return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
                 })
             .RequireAuthorization()
@@ -71,24 +63,12 @@ namespace HomeBudget.Directories.Endpoints
             });
 
             app.MapPut("/api/categories/{id:guid}",
-                async Task<Results<Ok, NotFound, ValidationProblem, BadRequest<string>>>
-                    (Guid id, Category category, ICategoryService service, HttpContext context) =>
+                async Task<Ok<CategoryResponse>>
+                    (Guid id, UpdateCategoryRequest category, ICategoryService service, HttpContext context) =>
                 {
-                    try
-                    {
-                        var userId = GetUserId(context);
-                        await service.UpdateCategoryAsync(userId, id, category);
-                    }
-                    catch (EntityNotFoundException)
-                    {
-                        return TypedResults.NotFound();
-                    }
-                    catch (Exception ex)
-                    {
-                        return TypedResults.BadRequest(ex.Message);
-                    }
-
-                    return TypedResults.Ok();
+                    var userId = GetUserId(context);
+                    var updated = await service.UpdateCategoryAsync(userId, id, category);
+                    return TypedResults.Ok(updated);
                 })
             .RequireAuthorization()
             .WithTags("Categories")
@@ -98,22 +78,10 @@ namespace HomeBudget.Directories.Endpoints
                 Description = "Обновляет категорию."
             });
 
-            app.MapDelete("/api/categories/{id:guid}", async Task<Results<Ok, NotFound, ValidationProblem, BadRequest<string>>> (Guid id, ICategoryService service, HttpContext context) =>
+            app.MapDelete("/api/categories/{id:guid}", async Task<Ok> (Guid id, ICategoryService service, HttpContext context) =>
             {
-                try
-                {
-                    var userId = GetUserId(context);
-                    await service.DeleteCategoryAsync(userId, id);
-                }
-                catch (EntityNotFoundException)
-                {
-                    return TypedResults.NotFound();
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.BadRequest(ex.Message);
-                }
-
+                var userId = GetUserId(context);
+                await service.DeleteCategoryAsync(userId, id);
                 return TypedResults.Ok();
             })
             .RequireAuthorization()

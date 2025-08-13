@@ -5,7 +5,6 @@ namespace HomeBudget.Directories.EF.DAL.Models
 {
     public class Currency
     {
-        [SwaggerIgnore]
         public Guid Id { get; set; }
 
         [JsonRequired]

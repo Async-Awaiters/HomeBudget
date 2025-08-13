@@ -1,15 +1,12 @@
 using HomeBudget.Directories;
 using HomeBudget.Directories.EF.DAL;
 using HomeBudget.Directories.EF.DAL.Interfaces;
-using HomeBudget.Directories.EF.DAL.Models;
-using HomeBudget.Directories.EF.Exceptions;
 using HomeBudget.Directories.Endpoints;
+using HomeBudget.Directories.Middleware;
 using HomeBudget.Directories.Services.Implementations;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -131,6 +128,8 @@ if (builder.Environment.IsDevelopment())
 var app = builder.Build();
 
 app.UseCors("AllowAll");
+
+app.UseExceptionMiddleware();
 
 app.UseAuthentication();
 app.UseAuthorization();

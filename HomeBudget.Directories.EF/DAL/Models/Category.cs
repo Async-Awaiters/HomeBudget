@@ -7,17 +7,10 @@ namespace HomeBudget.Directories.EF.DAL.Models
     [Table("Categories")]
     public class Category
     {
-        [SwaggerIgnore]
         public Guid Id { get; set; }
-
-        [JsonRequired]
         public required string Name { get; set; }
-
-        [SwaggerIgnore]
         public bool IsDeleted { get; set; }
-
         public Guid? ParentId { get; set; }
-        [SwaggerIgnore]
         public Guid? UserId { get; set; }
     }
 }

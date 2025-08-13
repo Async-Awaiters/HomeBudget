@@ -95,7 +95,7 @@ namespace HomeBudget.AuthService.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to register user with login: {Login}", request.Login);
-                throw; // Перебрасываем исключение для обработки middleware
+                throw;
             }
         }
 

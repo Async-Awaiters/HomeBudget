@@ -34,7 +34,7 @@ namespace HomeBudget.Directories.EF.DAL
             var currencyDb = await _context.Categories.AnyAsync(x => string.Equals(x.Name, category.Name) && Equals(x.ParentId, category.ParentId) && Equals(x.UserId, category.UserId));
             if (currencyDb)
             {
-                throw new EntityNotFoundException("Такая категория уже существует");
+                throw new EntityAlreadyExistsException("Такая категория уже существует.");
             }
 
             await _context.Categories.AddAsync(category);

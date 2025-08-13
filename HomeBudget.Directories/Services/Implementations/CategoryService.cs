@@ -1,7 +1,11 @@
 ﻿using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
+using HomeBudget.Directories.EF.Exceptions;
+using HomeBudget.Directories.Models.Categories.Requests;
+using HomeBudget.Directories.Models.Categories.Responses;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace HomeBudget.Directories.Services.Implementations;
 
@@ -20,46 +24,95 @@ public class CategoryService : ICategoryService
         _timeout = TimeSpan.FromMilliseconds(timeoutMs);
     }
 
-    public async Task<IEnumerable<Category>> GetAllCategoriesAsync(Guid userId)
+    public async Task<IEnumerable<CategoryResponse>> GetAllCategoriesAsync(Guid userId)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Getting all categories");
-        return await _repository.GetAll(userId, cts.Token).ToListAsync();
+
+        var categories = await _repository
+        .GetAll(userId, cts.Token)
+        .Select(c => new CategoryResponse
+        {
+            Id = c.Id,
+            Name = c.Name,
+            ParentId = c.ParentId
+        })
+        .ToListAsync(cts.Token);
+
+        return categories;
     }
 
-    public async Task<Category?> GetCategoryByIdAsync(Guid userId, Guid id)
+    public async Task<CategoryResponse?> GetCategoryByIdAsync(Guid userId, Guid id)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogDebug("Getting category by ID: {CategoryId}", id);
-        return await _repository.GetById(userId, id, cts.Token);
+
+        var category = await _repository.GetById(userId, id, cts.Token);
+        return category is null ? null : MapToResponse(category);
     }
 
-    public async Task<Category> CreateCategoryAsync(Guid userId, Category category)
+    public async Task<CategoryResponse> CreateCategoryAsync(Guid userId, CreateCategoryRequest categoryRequest)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Creating new category");
 
         try
         {
-            category.UserId = userId;
+            var validationContext = new ValidationContext(categoryRequest);
+            var validationResults = new List<ValidationResult>();
+            if (!Validator.TryValidateObject(categoryRequest, validationContext, validationResults, validateAllProperties: true))
+            {
+                var errors = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
+                _logger.LogWarning("Registration failed: Validation errors - {Errors}", errors);
+                throw new ValidationException($"Validation failed: {errors}");
+            }
+
+            var category = new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = categoryRequest.Name,
+                ParentId = categoryRequest.ParentId,
+                UserId = userId,
+                IsDeleted = false
+            };
+
             await _repository.Create(category, cts.Token);
+
+            return MapToResponse(category);
         }
+
         catch (Exception ex)
         {
             _logger.LogError("Error creating category: {ErrorMessage}", ex.Message);
             throw;
         }
-
-        return category;
     }
 
-    public async Task UpdateCategoryAsync(Guid userId, Guid id, Category category)
+    public async Task<CategoryResponse> UpdateCategoryAsync(Guid userId, Guid id, UpdateCategoryRequest request)
     {
         using var cts = new CancellationTokenSource(_timeout);
-        _logger.LogInformation("Updating category {CategoryId}", category.Id);
+        _logger.LogInformation("Updating category {CategoryId}", id);
         try
         {
+            var validationContext = new ValidationContext(request);
+            var validationResults = new List<ValidationResult>();
+            if (!Validator.TryValidateObject(request, validationContext, validationResults, validateAllProperties: true))
+            {
+                var errors = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
+                _logger.LogWarning("Registration failed: Validation errors - {Errors}", errors);
+                throw new ValidationException($"Validation failed: {errors}");
+            }
+
+            var category = await _repository.GetById(userId, id, cts.Token);
+            if (category is null)
+                throw new EntityNotFoundException("Категория не найдена");
+
+            if (!string.IsNullOrWhiteSpace(request.Name)) category.Name = request.Name;
+            if (request.ParentId.HasValue) category.ParentId = request.ParentId;
+
             await _repository.Update(userId, id, category, cts.Token);
+
+            return MapToResponse(category);
         }
         catch (Exception ex)
         {
@@ -82,4 +135,12 @@ public class CategoryService : ICategoryService
             throw;
         }
     }
+
+    private static CategoryResponse MapToResponse(Category category) =>
+        new CategoryResponse
+        {
+        Id = category.Id,
+        Name = category.Name,
+        ParentId = category.ParentId
+        };
 }
