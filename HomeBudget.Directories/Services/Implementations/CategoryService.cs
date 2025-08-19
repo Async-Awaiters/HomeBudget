@@ -5,7 +5,6 @@ using HomeBudget.Directories.Models.Categories.Requests;
 using HomeBudget.Directories.Models.Categories.Responses;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace HomeBudget.Directories.Services.Implementations;
 
@@ -58,15 +57,6 @@ public class CategoryService : ICategoryService
 
         try
         {
-            var validationContext = new ValidationContext(categoryRequest);
-            var validationResults = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(categoryRequest, validationContext, validationResults, validateAllProperties: true))
-            {
-                var errors = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
-                _logger.LogWarning("Registration failed: Validation errors - {Errors}", errors);
-                throw new ValidationException($"Validation failed: {errors}");
-            }
-
             var category = new Category
             {
                 Id = Guid.NewGuid(),
@@ -94,15 +84,6 @@ public class CategoryService : ICategoryService
         _logger.LogInformation("Updating category {CategoryId}", id);
         try
         {
-            var validationContext = new ValidationContext(request);
-            var validationResults = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(request, validationContext, validationResults, validateAllProperties: true))
-            {
-                var errors = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
-                _logger.LogWarning("Registration failed: Validation errors - {Errors}", errors);
-                throw new ValidationException($"Validation failed: {errors}");
-            }
-
             var category = await _repository.GetById(userId, id, cts.Token);
             if (category is null)
                 throw new EntityNotFoundException("Категория не найдена");

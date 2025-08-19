@@ -6,6 +6,7 @@ using HomeBudget.AuthService.Middleware;
 using HomeBudget.AuthService.Models;
 using HomeBudget.AuthService.Services.Implementations;
 using HomeBudget.AuthService.Services.Interfaces;
+using HomeBudget.AuthService.ValidationHelpers;
 using HomeBudget.AuthService.ValidationHelpers.Implementations;
 using HomeBudget.AuthService.ValidationHelpers.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -43,10 +44,12 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("postgreSQL")));
 
-// Репозитории и сервисы
+// Репозитории, сервисы и хелперы
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IRequestValidator<UpdateRequest>, UpdateRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<RegisterRequest>, RegisterRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<LoginRequest>, LoginRequestValidator>();
+builder.Services.AddScoped<IUpdateRequestValidator<UpdateRequest>, UpdateRequestValidator>();
 
 // Аутентификация JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

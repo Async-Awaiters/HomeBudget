@@ -1,6 +1,7 @@
 ﻿using HomeBudget.Directories.Models.Categories.Requests;
 using HomeBudget.Directories.Models.Categories.Responses;
 using HomeBudget.Directories.Services.Interfaces;
+using HomeBudget.Directories.ValidationHelpers.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -47,8 +48,10 @@ namespace HomeBudget.Directories.Endpoints
             });
 
             app.MapPost("/api/categories",
-                async Task<Created<CategoryResponse>> (CreateCategoryRequest categoryRequest, ICategoryService service, HttpContext context) =>
+                async Task<Created<CategoryResponse>> (CreateCategoryRequest categoryRequest, ICategoryService service, HttpContext context, IRequestValidator<CreateCategoryRequest> validator) =>
                 {
+                    validator.Validate(categoryRequest);
+
                     var userId = GetUserId(context);
                     var createdCategory = await service.CreateCategoryAsync(userId, categoryRequest);
                     return TypedResults.Created($"/api/category/{createdCategory.Id}", createdCategory);
@@ -63,11 +66,13 @@ namespace HomeBudget.Directories.Endpoints
 
             app.MapPut("/api/categories/{id:guid}",
                 async Task<Ok<CategoryResponse>>
-                    (Guid id, UpdateCategoryRequest category, ICategoryService service, HttpContext context) =>
+                    (Guid id, UpdateCategoryRequest category, ICategoryService service, HttpContext context, IRequestValidator<UpdateCategoryRequest> validator) =>
                 {
+                    validator.Validate(category);
+
                     var userId = GetUserId(context);
                     var updated = await service.UpdateCategoryAsync(userId, id, category);
-                    return TypedResults.Ok(updated);
+                    return TypedResults.Ok(updated); // TODO проверить код ответа
                 })
             .RequireAuthorization()
             .WithTags("Categories")

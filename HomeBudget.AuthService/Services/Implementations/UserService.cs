@@ -3,10 +3,8 @@ using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Exceptions;
 using HomeBudget.AuthService.Models;
 using HomeBudget.AuthService.Services.Interfaces;
-using HomeBudget.AuthService.ValidationHelpers.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
-using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -18,16 +16,14 @@ namespace HomeBudget.AuthService.Services.Implementations
         private readonly IUserRepository _repository;
         private readonly ILogger<UserService> _logger;
         private readonly IConfiguration _configuration;
-        private readonly IRequestValidator<UpdateRequest> _updateValidator;
         private readonly TimeSpan _timeout;
         private const int _defaultTimeout = 30000;
 
-        public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration, IRequestValidator<UpdateRequest> updateValidator)
+        public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration)
         {
             _repository = repository;
             _logger = logger;
             _configuration = configuration;
-            _updateValidator = updateValidator;
             int timeoutMs = configuration.GetValue("Services:Timeouts:UserService", _defaultTimeout);
             _timeout = TimeSpan.FromMilliseconds(timeoutMs);
         }
@@ -38,15 +34,6 @@ namespace HomeBudget.AuthService.Services.Implementations
 
             try
             {
-                var validationContext = new ValidationContext(request);
-                var validationResults = new List<ValidationResult>();
-                if (!Validator.TryValidateObject(request, validationContext, validationResults, validateAllProperties: true))
-                {
-                    var errors = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
-                    _logger.LogWarning("Registration failed: Validation errors - {Errors}", errors);
-                    throw new ValidationException($"Validation failed: {errors}");
-                }
-
                 var existingUserByLogin = await _repository.GetByLoginAsync(request.Login, cts.Token);
                 if (existingUserByLogin != null)
                 {
@@ -103,15 +90,6 @@ namespace HomeBudget.AuthService.Services.Implementations
         {
             using var cts = new CancellationTokenSource(_timeout);
 
-            var validationContext = new ValidationContext(request);
-            var validationResults = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(request, validationContext, validationResults, validateAllProperties: true))
-            {
-                var errors = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
-                _logger.LogWarning("Registration failed: Validation errors - {Errors}", errors);
-                throw new ValidationException($"Validation failed: {errors}");
-            }
-
             try
             {
                 _logger.LogDebug("Attempting login for user: {Login}", request.Login);
@@ -133,20 +111,12 @@ namespace HomeBudget.AuthService.Services.Implementations
             }
         }
 
-        public async Task UpdateAsync(Guid userId, UpdateRequest request)
+        public async Task UpdateAsync(Guid userId, UpdateRequest request, Dictionary<string, object?> validFields)
         {
             using var cts = new CancellationTokenSource(_timeout);
 
             try
             {
-                var validFields = _updateValidator.ValidateRequest(request);
-
-                if (!validFields.Any())
-                {
-                    _logger.LogWarning("Update request is empty or contains only empty strings for user ID: {UserId}", userId);
-                    throw new ArgumentException("Update request cannot be empty or contain only empty strings. At least one field must be provided with a valid value.", nameof(request));
-                }
-
                 var user = await _repository.GetByIdAsync(userId, cts.Token);
                 if (user == null)
                 {
@@ -154,20 +124,20 @@ namespace HomeBudget.AuthService.Services.Implementations
                     throw new KeyNotFoundException("User not found");
                 }
 
-                foreach (var field in validFields)
+                foreach (var field in validFields) //TODO рефлексия по полям юзера
                 {
                     switch (field.Key)
                     {
-                        case "Email":
+                        case nameof(User.Email):
                             user.Email = (string)field.Value!;
                             break;
-                        case "FirstName":
+                        case nameof(User.FirstName):
                             user.FirstName = (string)field.Value!;
                             break;
-                        case "LastName":
+                        case nameof(User.LastName):
                             user.LastName = (string)field.Value!;
                             break;
-                        case "BirthDate":
+                        case nameof(User.BirthDate):
                             user.BirthDate = (DateOnly?)field.Value;
                             break;
                     }
@@ -183,7 +153,7 @@ namespace HomeBudget.AuthService.Services.Implementations
             }
         }
 
-        //Пока сещуствует как заглушка
+        //Пока существует как заглушка
         public Task LogoutAsync(HttpContext context)
         {
             try

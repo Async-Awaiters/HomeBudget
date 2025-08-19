@@ -1,5 +1,6 @@
 ﻿using HomeBudget.AuthService.Models;
 using HomeBudget.AuthService.Services.Interfaces;
+using HomeBudget.AuthService.ValidationHelpers.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
@@ -10,8 +11,10 @@ public static class UserEndpoints
 {
     public static void MapUserEndpoints(this WebApplication app)
     {
-        app.MapPost("/api/register", async (IUserService service, RegisterRequest request) =>
+        app.MapPost("/api/register", async (IUserService service, RegisterRequest request, IRequestValidator<RegisterRequest> validator) =>
         {
+            validator.Validate(request);
+
             RegisterResponse response = await service.RegisterAsync(request);
             return TypedResults.Ok(response);
         })
@@ -23,8 +26,10 @@ public static class UserEndpoints
             Description = "Регистрирует пользователя и возвращает его представление."
         });
 
-        app.MapPost("/api/login", async (IUserService service, LoginRequest request, HttpContext context) =>
+        app.MapPost("/api/login", async (IUserService service, LoginRequest request, HttpContext context, IRequestValidator<LoginRequest> validator) =>
         {
+            validator.Validate(request);
+
             var token = await service.LoginAsync(request);
             context.Response.Headers.Append("Authorization", $"Bearer {token}");
             return TypedResults.Ok();
@@ -37,10 +42,12 @@ public static class UserEndpoints
             Description = "Возвращает JWT в заголовке ответа."
         });
 
-        app.MapPut("/api/users", async (IUserService service, UpdateRequest request, HttpContext context) =>
+        app.MapPut("/api/users", async (IUserService service, UpdateRequest request, HttpContext context, IUpdateRequestValidator<UpdateRequest> validator) =>
         {
+            var validFields = validator.Validate(request);
+
             var userId = GetUserId(context);
-            await service.UpdateAsync(userId, request);
+            await service.UpdateAsync(userId, request, validFields);
             return TypedResults.Ok();
         })
         .RequireAuthorization()

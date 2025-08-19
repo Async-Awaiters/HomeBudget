@@ -3,8 +3,11 @@ using HomeBudget.Directories.EF.DAL;
 using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.Endpoints;
 using HomeBudget.Directories.Middleware;
+using HomeBudget.Directories.Models.Categories.Requests;
 using HomeBudget.Directories.Services.Implementations;
 using HomeBudget.Directories.Services.Interfaces;
+using HomeBudget.Directories.ValidationHelpers.Implementations;
+using HomeBudget.Directories.ValidationHelpers.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +39,10 @@ builder.Services.AddDbContext<DirectoriesContext>(options =>
 // Регистрация сервисов
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
+builder.Services.AddScoped<IRequestValidator<CreateCategoryRequest>, CreateRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<UpdateCategoryRequest>, UpdateRequestValidator>();
+
+
 
 // Регистрация репозиториев
 builder.Services.AddScoped<ICategoriesRepository, CategoriesRepository>();
