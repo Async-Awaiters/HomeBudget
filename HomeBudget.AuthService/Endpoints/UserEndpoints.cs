@@ -58,6 +58,22 @@ public static class UserEndpoints
             Description = "Обновляет данные пользователя."
         });
 
+        app.MapGet("/api/refresh", async (IUserService service, HttpContext context) =>
+        {
+            var userId = GetUserId(context);
+
+            var newToken = await service.RefreshTokenAsync(userId);
+            context.Response.Headers.Append("Authorization", $"Bearer {newToken}");
+            return TypedResults.Ok();
+        })
+        .RequireAuthorization()
+        .WithTags("Refresh")
+        .WithOpenApi(operation => new(operation)
+        {
+            Summary = "Обновление токена",
+            Description = "Возвращает новый токен в заголовке."
+        });
+
         app.MapPost("/api/logout", async (IUserService service, HttpContext context) =>
         {
             await service.LogoutAsync(context);

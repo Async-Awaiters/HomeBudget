@@ -111,6 +111,33 @@ namespace HomeBudget.AuthService.Services.Implementations
             }
         }
 
+        public async Task<string> RefreshTokenAsync(Guid userId)
+        {
+            using var cts = new CancellationTokenSource(_timeout);
+
+            try
+            {
+                _logger.LogInformation("Refreshing token");
+
+                var user = await _repository.GetByIdAsync(userId, cts.Token);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found for token");
+                    throw new UnauthorizedAccessException("User not found");
+                }
+
+                var newToken = GenerateJwtToken(user);
+                _logger.LogInformation("Generated new token for user {Login}", user.Login);
+
+                return newToken;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to refresh token for user with id {id}", userId);
+                throw;
+            }
+        }
+
         public async Task UpdateAsync(Guid userId, UpdateRequest request, Dictionary<string, object?> validFields)
         {
             using var cts = new CancellationTokenSource(_timeout);
