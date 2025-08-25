@@ -23,7 +23,7 @@ namespace HomeBudget.Directories.EF.DAL
 
         public async Task<Category?> GetById(Guid userId, Guid id, CancellationToken cancellationToken)
         {
-            var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id && category.UserId == userId);
+            var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id && (category.UserId == userId || category.UserId == null));
             return category is not null && !category.IsDeleted
                 ? category
                 : null;
