@@ -16,8 +16,7 @@ namespace HomeBudget.Directories.EF.DAL
 
         public IQueryable<Category> GetAll(Guid userId, CancellationToken cancellationToken)
         {
-            var query = _context.Categories.Where(category => !category.IsDeleted && category.UserId == userId);
-
+            var query = _context.Categories.Where(category => !category.IsDeleted && (category.UserId == userId || category.UserId == null));
             return query;
         }
 
