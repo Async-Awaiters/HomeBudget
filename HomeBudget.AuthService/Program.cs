@@ -3,10 +3,15 @@ using HomeBudget.AuthService.EF.Repositories;
 using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Endpoints;
 using HomeBudget.AuthService.Middleware;
+using HomeBudget.AuthService.Models;
 using HomeBudget.AuthService.Services.Implementations;
 using HomeBudget.AuthService.Services.Interfaces;
+using HomeBudget.AuthService.ValidationHelpers;
+using HomeBudget.AuthService.ValidationHelpers.Implementations;
+using HomeBudget.AuthService.ValidationHelpers.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -23,13 +28,28 @@ builder.Services.AddLogging(logging =>
     logging.AddDebug();
 });
 
+// Настройка Cors
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()   // Разрешает все источники (origins)
+              .AllowAnyHeader()   // Разрешает все заголовки
+              .AllowAnyMethod()   // Разрешает все HTTP-методы (GET, POST, OPTIONS и т.д.)
+              .WithExposedHeaders("Authorization", "X-Custom-Header");
+    });
+});
+
 // Подключение к БД
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("postgreSQL")));
 
-// Репозитории и сервисы
+// Репозитории, сервисы и хелперы
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRequestValidator<RegisterRequest>, RegisterRequestValidator>();
+builder.Services.AddScoped<IRequestValidator<LoginRequest>, LoginRequestValidator>();
+builder.Services.AddScoped<IUpdateRequestValidator<UpdateRequest>, UpdateRequestValidator>();
 
 // Аутентификация JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -119,8 +139,9 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
 var app = builder.Build();
+
+app.UseCors("AllowAll");
 
 app.UseExceptionMiddleware();
 

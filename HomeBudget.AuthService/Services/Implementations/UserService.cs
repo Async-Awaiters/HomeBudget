@@ -82,7 +82,7 @@ namespace HomeBudget.AuthService.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to register user with login: {Login}", request.Login);
-                throw; // Перебрасываем исключение для обработки middleware
+                throw;
             }
         }
 
@@ -111,7 +111,34 @@ namespace HomeBudget.AuthService.Services.Implementations
             }
         }
 
-        public async Task UpdateAsync(Guid userId, UpdateRequest request)
+        public async Task<string> RefreshTokenAsync(Guid userId)
+        {
+            using var cts = new CancellationTokenSource(_timeout);
+
+            try
+            {
+                _logger.LogInformation("Refreshing token");
+
+                var user = await _repository.GetByIdAsync(userId, cts.Token);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found for token");
+                    throw new UnauthorizedAccessException("User not found");
+                }
+
+                var newToken = GenerateJwtToken(user);
+                _logger.LogInformation("Generated new token for user {Login}", user.Login);
+
+                return newToken;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to refresh token for user with id {id}", userId);
+                throw;
+            }
+        }
+
+        public async Task UpdateAsync(Guid userId, UpdateRequest request, Dictionary<string, object?> validFields)
         {
             using var cts = new CancellationTokenSource(_timeout);
 
@@ -124,10 +151,24 @@ namespace HomeBudget.AuthService.Services.Implementations
                     throw new KeyNotFoundException("User not found");
                 }
 
-                if (!string.IsNullOrWhiteSpace(request.Email)) user.Email = request.Email;
-                if (!string.IsNullOrWhiteSpace(request.FirstName)) user.FirstName = request.FirstName;
-                if (!string.IsNullOrWhiteSpace(request.LastName)) user.LastName = request.LastName;
-                if (request.BirthDate.HasValue) user.BirthDate = request.BirthDate;
+                foreach (var field in validFields) //TODO рефлексия по полям юзера
+                {
+                    switch (field.Key)
+                    {
+                        case nameof(User.Email):
+                            user.Email = (string)field.Value!;
+                            break;
+                        case nameof(User.FirstName):
+                            user.FirstName = (string)field.Value!;
+                            break;
+                        case nameof(User.LastName):
+                            user.LastName = (string)field.Value!;
+                            break;
+                        case nameof(User.BirthDate):
+                            user.BirthDate = (DateOnly?)field.Value;
+                            break;
+                    }
+                }
 
                 await _repository.UpdateUserAsync(user, cts.Token);
                 _logger.LogInformation("User updated: {Login}", user.Login);
@@ -139,7 +180,7 @@ namespace HomeBudget.AuthService.Services.Implementations
             }
         }
 
-        //Пока сещуствует как заглушка
+        //Пока существует как заглушка
         public Task LogoutAsync(HttpContext context)
         {
             try

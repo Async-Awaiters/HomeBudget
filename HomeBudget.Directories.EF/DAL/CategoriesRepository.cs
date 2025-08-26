@@ -14,16 +14,15 @@ namespace HomeBudget.Directories.EF.DAL
             _context = context;
         }
 
-        public IQueryable<Category> GetAll(CancellationToken cancellationToken)
+        public IQueryable<Category> GetAll(Guid userId, CancellationToken cancellationToken)
         {
-            var query = _context.Categories.Where(category => !category.IsDeleted);
-
+            var query = _context.Categories.Where(category => !category.IsDeleted && (category.UserId == userId || category.UserId == null));
             return query;
         }
 
-        public async Task<Category?> GetById(Guid id, CancellationToken cancellationToken)
+        public async Task<Category?> GetById(Guid userId, Guid id, CancellationToken cancellationToken)
         {
-            var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id);
+            var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id && (category.UserId == userId || category.UserId == null));
             return category is not null && !category.IsDeleted
                 ? category
                 : null;
@@ -31,19 +30,19 @@ namespace HomeBudget.Directories.EF.DAL
 
         public async Task Create(Category category, CancellationToken cancellationToken)
         {
-            var currencyDb = _context.Categories.AnyAsync(x => string.Equals(x.Name, category.Name) && Equals(x.ParentId, category.ParentId) && Equals(x.UserId, category.UserId));
-            if (currencyDb.Result)
+            var currencyDb = await _context.Categories.AnyAsync(x => string.Equals(x.Name, category.Name) && Equals(x.ParentId, category.ParentId) && Equals(x.UserId, category.UserId));
+            if (currencyDb)
             {
-                throw new EntityNotFoundException("Такая категория уже существует");
+                throw new EntityAlreadyExistsException("Такая категория уже существует.");
             }
 
             await _context.Categories.AddAsync(category);
             await _context.SaveChangesAsync();
         }
 
-        public async Task Delete(Guid id, CancellationToken cancellationToken)
+        public async Task Delete(Guid userId, Guid id, CancellationToken cancellationToken)
         {
-            var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id);
+            var category = await _context.Categories.FirstOrDefaultAsync(category => category.Id == id && category.UserId == userId && !category.IsDeleted);
             if (category != null)
             {
                 category.IsDeleted = true;
@@ -55,12 +54,13 @@ namespace HomeBudget.Directories.EF.DAL
             }
         }
 
-        public async Task Update(Category category, CancellationToken cancellationToken)
+        public async Task Update(Guid userId, Guid id, Category category, CancellationToken cancellationToken)
         {
-            var categoryBD = await _context.Categories.FirstOrDefaultAsync(x => x.Id == category.Id);
+            var categoryBD = await _context.Categories.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId);
             if (categoryBD != null)
             {
-                _context.Entry(categoryBD).CurrentValues.SetValues(category);
+                categoryBD.Name = category.Name;
+                categoryBD.ParentId = category.ParentId;
                 await _context.SaveChangesAsync();
             }
             else

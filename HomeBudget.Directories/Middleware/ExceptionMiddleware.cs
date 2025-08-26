@@ -1,11 +1,11 @@
-﻿using HomeBudget.AuthService.Exceptions;
+﻿using HomeBudget.Directories.EF.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
 
-namespace HomeBudget.AuthService.Middleware
+namespace HomeBudget.Directories.Middleware
 {
     public class ExceptionMiddleware
     {
@@ -38,10 +38,6 @@ namespace HomeBudget.AuthService.Middleware
 
             switch (ex)
             {
-                case DuplicateUserException _:
-                    statusCode = HttpStatusCode.Conflict;
-                    message = ex.Message;
-                    break;
                 case KeyNotFoundException _:
                     statusCode = HttpStatusCode.NotFound;
                     message = ex.Message;
@@ -65,6 +61,14 @@ namespace HomeBudget.AuthService.Middleware
                 case ValidationException valEx:
                     statusCode = HttpStatusCode.BadRequest;
                     message = valEx.Message;
+                    break;
+                case EntityNotFoundException _:
+                    statusCode = HttpStatusCode.NotFound;
+                    message = ex.Message;
+                    break;
+                case EntityAlreadyExistsException _:
+                    statusCode = HttpStatusCode.Conflict;
+                    message = ex.Message;
                     break;
                 default:
                     statusCode = HttpStatusCode.InternalServerError;
