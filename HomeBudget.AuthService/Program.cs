@@ -4,6 +4,7 @@ using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Endpoints;
 using HomeBudget.AuthService.Middleware;
 using HomeBudget.AuthService.Models;
+using HomeBudget.AuthService.Security;
 using HomeBudget.AuthService.Services.Implementations;
 using HomeBudget.AuthService.Services.Interfaces;
 using HomeBudget.AuthService.ValidationHelpers;
@@ -47,6 +48,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Репозитории, сервисы и хелперы
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenBuilder, JwtTokenBuilder>();
 builder.Services.AddScoped<IRequestValidator<RegisterRequest>, RegisterRequestValidator>();
 builder.Services.AddScoped<IRequestValidator<LoginRequest>, LoginRequestValidator>();
 builder.Services.AddScoped<IUpdateRequestValidator<UpdateRequest>, UpdateRequestValidator>();
