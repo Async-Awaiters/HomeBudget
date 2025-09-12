@@ -2,6 +2,7 @@
 using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Exceptions;
 using HomeBudget.AuthService.Models;
+using HomeBudget.AuthService.Security;
 using HomeBudget.AuthService.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
@@ -14,14 +15,16 @@ namespace HomeBudget.AuthService.Services.Implementations
     public class UserService : IUserService
     {
         private readonly IUserRepository _repository;
+        private readonly ITokenBuilder _tokenBuilder;
         private readonly ILogger<UserService> _logger;
         private readonly IConfiguration _configuration;
         private readonly TimeSpan _timeout;
         private const int _defaultTimeout = 30000;
 
-        public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration)
+        public UserService(IUserRepository repository, ITokenBuilder tokenBuilder, ILogger<UserService> logger, IConfiguration configuration)
         {
             _repository = repository;
+            _tokenBuilder = tokenBuilder;
             _logger = logger;
             _configuration = configuration;
             int timeoutMs = configuration.GetValue("Services:Timeouts:UserService", _defaultTimeout);
@@ -151,7 +154,7 @@ namespace HomeBudget.AuthService.Services.Implementations
                     throw new KeyNotFoundException("User not found");
                 }
 
-                foreach (var field in validFields) //TODO рефлексия по полям юзера
+                foreach (var field in validFields)
                 {
                     switch (field.Key)
                     {
@@ -200,45 +203,17 @@ namespace HomeBudget.AuthService.Services.Implementations
             try
             {
                 var jwtSecret = _configuration["Jwt:Secret"];
-                if (string.IsNullOrEmpty(jwtSecret))
-                {
-                    throw new InvalidOperationException("JWT Secret is not configured. Please set 'Jwt:Secret' in appsettings.json.");
-                }
-
-                var lifetimeMinutes = _configuration["Jwt:LifetimeMinutes"];
-                if (string.IsNullOrEmpty(lifetimeMinutes) || !int.TryParse(lifetimeMinutes, out var lifetime))
-                {
-                    throw new InvalidOperationException("JWT LifetimeMinutes is not configured or invalid. Please set 'Jwt:LifetimeMinutes' in appsettings.json.");
-                }
-
+                var lifetimeMinutes = _configuration.GetValue<int>("Jwt:LifetimeMinutes");
                 var jwtIssuer = _configuration["Jwt:Issuer"];
-                if (string.IsNullOrEmpty(jwtIssuer))
-                {
-                    throw new InvalidOperationException("JWT Issuer is not configured. Please set 'Jwt:Issuer' in appsettings.json.");
-                }
-
                 var jwtAudience = _configuration["Jwt:Audience"];
-                if (string.IsNullOrEmpty(jwtAudience))
-                {
-                    throw new InvalidOperationException("JWT Audience is not configured. Please set 'Jwt:Audience' in appsettings.json.");
-                }
 
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.ASCII.GetBytes(jwtSecret);
-                var tokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(new[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Name, user.Login)
-                    }),
-                    Expires = DateTime.UtcNow.AddMinutes(lifetime),
-                    Issuer = jwtIssuer,
-                    Audience = jwtAudience,
-                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-                };
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                return tokenHandler.WriteToken(token);
+                return _tokenBuilder
+                    .AddUserClaims(user)
+                    .SetIssuer(jwtIssuer!)
+                    .SetAudience(jwtAudience!)
+                    .SetLifetimeMinutes(lifetimeMinutes)
+                    .SetSigningKey(jwtSecret!)
+                    .Build();
             }
             catch (Exception ex)
             {
