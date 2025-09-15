@@ -4,7 +4,7 @@
     "HomeBudget.Directories": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5002;https://localhost:5003",
+      "applicationUrl": "http://localhost:5002",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       }
