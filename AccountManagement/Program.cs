@@ -1,0 +1,125 @@
+using System.Text;
+using AccountManagement.EF;
+using AccountManagement.EF.Repositories.Interfaces;
+using AccountManagement.Services;
+using AccountManagement.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using NLog;
+using NLog.Extensions.Logging;
+using Scalar.AspNetCore;
+using Swashbuckle.AspNetCore.SwaggerGen;
+
+var logger = LogManager.Setup().GetCurrentClassLogger();
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenApi();
+
+var config = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .Build();
+
+builder.Services.AddLogging(loggingBuilder =>
+    {
+        loggingBuilder.ClearProviders();
+       loggingBuilder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
+       loggingBuilder.AddNLog(config);
+   });
+
+builder.Services.AddDbContext<AccountManagementContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("postgreSQL")));
+
+// Репозитории
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
+
+// Сервисы
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<ITransactionsService, TransactionsService>();
+
+// Аутентификация JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwtSecret = builder.Configuration["Jwt:Secret"];
+        if (string.IsNullOrEmpty(jwtSecret))
+        {
+            throw new InvalidOperationException("JWT Secret is not configured. Please set 'Jwt:Secret' in appsettings.json.");
+        }
+
+        var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+        if (string.IsNullOrEmpty(jwtIssuer))
+        {
+            throw new InvalidOperationException("JWT Issuer is not configured. Please set 'Jwt:Issuer' in appsettings.json.");
+        }
+
+        var jwtAudience = builder.Configuration["Jwt:Audience"];
+        if (string.IsNullOrEmpty(jwtAudience))
+        {
+            throw new InvalidOperationException("JWT Audience is not configured. Please set 'Jwt:Audience' in appsettings.json.");
+        }
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecret))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Title = "HomeBudget Accounts API",
+            Version = "v1",
+            Description = "API для работы со счетами."
+        });
+
+        c.MapType<Guid>(() => new OpenApiSchema
+        {
+            Type = "string",
+            Format = "uuid",
+            Example = OpenApiAnyFactory.CreateFromJson($"\"{Guid.NewGuid()}\"")
+        });
+    });
+}
+
+builder.Services
+    .AddControllers()
+    .AddNewtonsoftJson();
+
+var app = builder.Build();
+
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger(options => { options.RouteTemplate = "/openapi/{documentName}.json"; });
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "HomeBudget Account Management API";
+        options.Theme = ScalarTheme.Laserwave;
+    });
+}
+
+app.UseHttpsRedirection();
+app.MapControllers();
+
+app.Run();
