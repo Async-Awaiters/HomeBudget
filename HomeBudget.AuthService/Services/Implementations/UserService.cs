@@ -2,10 +2,10 @@
 using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Exceptions;
 using HomeBudget.AuthService.Models;
+using HomeBudget.AuthService.Security;
 using HomeBudget.AuthService.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
-using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -15,14 +15,16 @@ namespace HomeBudget.AuthService.Services.Implementations
     public class UserService : IUserService
     {
         private readonly IUserRepository _repository;
+        private readonly ITokenBuilder _tokenBuilder;
         private readonly ILogger<UserService> _logger;
         private readonly IConfiguration _configuration;
         private readonly TimeSpan _timeout;
         private const int _defaultTimeout = 30000;
 
-        public UserService(IUserRepository repository, ILogger<UserService> logger, IConfiguration configuration)
+        public UserService(IUserRepository repository, ITokenBuilder tokenBuilder, ILogger<UserService> logger, IConfiguration configuration)
         {
             _repository = repository;
+            _tokenBuilder = tokenBuilder;
             _logger = logger;
             _configuration = configuration;
             int timeoutMs = configuration.GetValue("Services:Timeouts:UserService", _defaultTimeout);
@@ -35,15 +37,6 @@ namespace HomeBudget.AuthService.Services.Implementations
 
             try
             {
-                var validationContext = new ValidationContext(request);
-                var validationResults = new List<ValidationResult>();
-                if (!Validator.TryValidateObject(request, validationContext, validationResults, validateAllProperties: true))
-                {
-                    var errors = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
-                    _logger.LogWarning("Registration failed: Validation errors - {Errors}", errors);
-                    throw new ValidationException($"Validation failed: {errors}");
-                }
-
                 var existingUserByLogin = await _repository.GetByLoginAsync(request.Login, cts.Token);
                 if (existingUserByLogin != null)
                 {
@@ -92,22 +85,13 @@ namespace HomeBudget.AuthService.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to register user with login: {Login}", request.Login);
-                throw; // Перебрасываем исключение для обработки middleware
+                throw;
             }
         }
 
         public async Task<string> LoginAsync(LoginRequest request)
         {
             using var cts = new CancellationTokenSource(_timeout);
-
-            var validationContext = new ValidationContext(request);
-            var validationResults = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(request, validationContext, validationResults, validateAllProperties: true))
-            {
-                var errors = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
-                _logger.LogWarning("Registration failed: Validation errors - {Errors}", errors);
-                throw new ValidationException($"Validation failed: {errors}");
-            }
 
             try
             {
@@ -130,18 +114,36 @@ namespace HomeBudget.AuthService.Services.Implementations
             }
         }
 
-        public async Task UpdateAsync(Guid userId, UpdateRequest request)
+        public async Task<string> RefreshTokenAsync(Guid userId)
         {
             using var cts = new CancellationTokenSource(_timeout);
 
-            if (string.IsNullOrWhiteSpace(request.Email) &&
-                string.IsNullOrWhiteSpace(request.FirstName) &&
-                string.IsNullOrWhiteSpace(request.LastName) &&
-                !request.BirthDate.HasValue)
+            try
             {
-                _logger.LogWarning("Update request is empty or contains only empty strings for user ID: {UserId}", userId);
-                throw new ArgumentException("Update request cannot be empty or contain only empty strings. At least one field must be provided with a valid value.", nameof(request));
+                _logger.LogInformation("Refreshing token");
+
+                var user = await _repository.GetByIdAsync(userId, cts.Token);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found for token");
+                    throw new UnauthorizedAccessException("User not found");
+                }
+
+                var newToken = GenerateJwtToken(user);
+                _logger.LogInformation("Generated new token for user {Login}", user.Login);
+
+                return newToken;
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to refresh token for user with id {id}", userId);
+                throw;
+            }
+        }
+
+        public async Task UpdateAsync(Guid userId, UpdateRequest request, Dictionary<string, object?> validFields)
+        {
+            using var cts = new CancellationTokenSource(_timeout);
 
             try
             {
@@ -152,10 +154,24 @@ namespace HomeBudget.AuthService.Services.Implementations
                     throw new KeyNotFoundException("User not found");
                 }
 
-                if (!string.IsNullOrWhiteSpace(request.Email)) user.Email = request.Email;
-                if (!string.IsNullOrWhiteSpace(request.FirstName)) user.FirstName = request.FirstName;
-                if (!string.IsNullOrWhiteSpace(request.LastName)) user.LastName = request.LastName;
-                if (request.BirthDate.HasValue) user.BirthDate = request.BirthDate;
+                foreach (var field in validFields)
+                {
+                    switch (field.Key)
+                    {
+                        case nameof(User.Email):
+                            user.Email = (string)field.Value!;
+                            break;
+                        case nameof(User.FirstName):
+                            user.FirstName = (string)field.Value!;
+                            break;
+                        case nameof(User.LastName):
+                            user.LastName = (string)field.Value!;
+                            break;
+                        case nameof(User.BirthDate):
+                            user.BirthDate = (DateOnly?)field.Value;
+                            break;
+                    }
+                }
 
                 await _repository.UpdateUserAsync(user, cts.Token);
                 _logger.LogInformation("User updated: {Login}", user.Login);
@@ -167,7 +183,7 @@ namespace HomeBudget.AuthService.Services.Implementations
             }
         }
 
-        //Пока сещуствует как заглушка
+        //Пока существует как заглушка
         public Task LogoutAsync(HttpContext context)
         {
             try
@@ -187,45 +203,17 @@ namespace HomeBudget.AuthService.Services.Implementations
             try
             {
                 var jwtSecret = _configuration["Jwt:Secret"];
-                if (string.IsNullOrEmpty(jwtSecret))
-                {
-                    throw new InvalidOperationException("JWT Secret is not configured. Please set 'Jwt:Secret' in appsettings.json.");
-                }
-
-                var lifetimeMinutes = _configuration["Jwt:LifetimeMinutes"];
-                if (string.IsNullOrEmpty(lifetimeMinutes) || !int.TryParse(lifetimeMinutes, out var lifetime))
-                {
-                    throw new InvalidOperationException("JWT LifetimeMinutes is not configured or invalid. Please set 'Jwt:LifetimeMinutes' in appsettings.json.");
-                }
-
+                var lifetimeMinutes = _configuration.GetValue<int>("Jwt:LifetimeMinutes");
                 var jwtIssuer = _configuration["Jwt:Issuer"];
-                if (string.IsNullOrEmpty(jwtIssuer))
-                {
-                    throw new InvalidOperationException("JWT Issuer is not configured. Please set 'Jwt:Issuer' in appsettings.json.");
-                }
-
                 var jwtAudience = _configuration["Jwt:Audience"];
-                if (string.IsNullOrEmpty(jwtAudience))
-                {
-                    throw new InvalidOperationException("JWT Audience is not configured. Please set 'Jwt:Audience' in appsettings.json.");
-                }
 
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.ASCII.GetBytes(jwtSecret);
-                var tokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(new[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Name, user.Login)
-                    }),
-                    Expires = DateTime.UtcNow.AddMinutes(lifetime),
-                    Issuer = jwtIssuer,
-                    Audience = jwtAudience,
-                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-                };
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                return tokenHandler.WriteToken(token);
+                return _tokenBuilder
+                    .AddUserClaims(user)
+                    .SetIssuer(jwtIssuer!)
+                    .SetAudience(jwtAudience!)
+                    .SetLifetimeMinutes(lifetimeMinutes)
+                    .SetSigningKey(jwtSecret!)
+                    .Build();
             }
             catch (Exception ex)
             {

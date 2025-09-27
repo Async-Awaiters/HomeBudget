@@ -1,5 +1,8 @@
 ﻿using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
+using HomeBudget.Directories.EF.Exceptions;
+using HomeBudget.Directories.Models.Categories.Requests;
+using HomeBudget.Directories.Models.Categories.Responses;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,45 +23,77 @@ public class CategoryService : ICategoryService
         _timeout = TimeSpan.FromMilliseconds(timeoutMs);
     }
 
-    public async Task<IEnumerable<Category>> GetAllCategoriesAsync()
+    public async Task<IEnumerable<CategoryResponse>> GetAllCategoriesAsync(Guid userId)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Getting all categories");
-        return await _repository.GetAll(cts.Token).ToListAsync();
+
+        var categories = await _repository
+        .GetAll(userId, cts.Token)
+        .Select(c => new CategoryResponse
+        {
+            Id = c.Id,
+            Name = c.Name,
+            ParentId = c.ParentId
+        })
+        .ToListAsync(cts.Token);
+
+        return categories;
     }
 
-    public async Task<Category?> GetCategoryByIdAsync(Guid id)
+    public async Task<CategoryResponse?> GetCategoryByIdAsync(Guid userId, Guid id)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogDebug("Getting category by ID: {CategoryId}", id);
-        return await _repository.GetById(id, cts.Token);
+
+        var category = await _repository.GetById(userId, id, cts.Token);
+        return category is null ? null : MapToResponse(category);
     }
 
-    public async Task<Category> CreateCategoryAsync(Category category)
+    public async Task<CategoryResponse> CreateCategoryAsync(Guid userId, CreateCategoryRequest categoryRequest)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Creating new category");
 
         try
         {
+            var category = new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = categoryRequest.Name,
+                ParentId = categoryRequest.ParentId,
+                UserId = userId,
+                IsDeleted = false
+            };
+
             await _repository.Create(category, cts.Token);
+
+            return MapToResponse(category);
         }
+
         catch (Exception ex)
         {
             _logger.LogError("Error creating category: {ErrorMessage}", ex.Message);
             throw;
         }
-
-        return category;
     }
 
-    public async Task UpdateCategoryAsync(Category category)
+    public async Task<CategoryResponse> UpdateCategoryAsync(Guid userId, Guid id, UpdateCategoryRequest request)
     {
         using var cts = new CancellationTokenSource(_timeout);
-        _logger.LogInformation("Updating category {CategoryId}", category.Id);
+        _logger.LogInformation("Updating category {CategoryId}", id);
         try
         {
-            await _repository.Update(category, cts.Token);
+            var category = await _repository.GetById(userId, id, cts.Token);
+            if (category is null)
+                throw new EntityNotFoundException("Категория не найдена");
+
+            if (!string.IsNullOrWhiteSpace(request.Name)) category.Name = request.Name;
+            if (request.ParentId.HasValue) category.ParentId = request.ParentId;
+
+            await _repository.Update(userId, id, category, cts.Token);
+
+            return MapToResponse(category);
         }
         catch (Exception ex)
         {
@@ -67,13 +102,13 @@ public class CategoryService : ICategoryService
         }
     }
 
-    public async Task DeleteCategoryAsync(Guid id)
+    public async Task DeleteCategoryAsync(Guid userId, Guid id)
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogInformation("Deleting category {CategoryId}", id);
         try
         {
-            await _repository.Delete(id, cts.Token);
+            await _repository.Delete(userId, id, cts.Token);
         }
         catch (Exception ex)
         {
@@ -81,4 +116,12 @@ public class CategoryService : ICategoryService
             throw;
         }
     }
+
+    private static CategoryResponse MapToResponse(Category category) =>
+        new CategoryResponse
+        {
+        Id = category.Id,
+        Name = category.Name,
+        ParentId = category.ParentId
+        };
 }

@@ -1,5 +1,6 @@
 ﻿using HomeBudget.Directories.EF.DAL.Interfaces;
 using HomeBudget.Directories.EF.DAL.Models;
+using HomeBudget.Directories.EF.Exceptions;
 using HomeBudget.Directories.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,6 +35,10 @@ public class CurrencyService : ICurrencyService
     {
         using var cts = new CancellationTokenSource(_timeout);
         _logger.LogDebug("Getting currency by ID: {CurrencyId}", id);
-        return await _repository.GetById(id, cts.Token);
+        var category = await _repository.GetById(id, cts.Token);
+
+        if (category == null) throw new EntityNotFoundException("Категория не найдена");
+
+        return category;
     }
 }

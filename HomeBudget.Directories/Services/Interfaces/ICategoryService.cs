@@ -1,12 +1,13 @@
-﻿using HomeBudget.Directories.EF.DAL.Models;
+﻿using HomeBudget.Directories.Models.Categories.Requests;
+using HomeBudget.Directories.Models.Categories.Responses;
 
 namespace HomeBudget.Directories.Services.Interfaces;
 
 public interface ICategoryService
 {
-    Task<IEnumerable<Category>> GetAllCategoriesAsync();
-    Task<Category?> GetCategoryByIdAsync(Guid id);
-    Task<Category> CreateCategoryAsync(Category category);
-    Task UpdateCategoryAsync(Category category);
-    Task DeleteCategoryAsync(Guid id);
+    Task<IEnumerable<CategoryResponse>> GetAllCategoriesAsync(Guid userId);
+    Task<CategoryResponse?> GetCategoryByIdAsync(Guid userId, Guid id);
+    Task<CategoryResponse> CreateCategoryAsync(Guid UserId, CreateCategoryRequest category);
+    Task<CategoryResponse> UpdateCategoryAsync(Guid userId, Guid Id, UpdateCategoryRequest category);
+    Task DeleteCategoryAsync(Guid userId, Guid id);
 }

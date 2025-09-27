@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HomeBudget.AuthService.CustomAttributes;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace HomeBudget.AuthService.Models
@@ -25,6 +26,7 @@ namespace HomeBudget.AuthService.Models
         [Required]
         [StringLength(100, MinimumLength = 1, ErrorMessage = "Password must be between 1 and 100 characters.")]
         public required string Password { get; set; }
+        [CustomDateValidation(ErrorMessage = "Birth date cannot be in the future or before 1900-01-01.")]
         public DateOnly? BirthDate { get; set; }
     }
 }

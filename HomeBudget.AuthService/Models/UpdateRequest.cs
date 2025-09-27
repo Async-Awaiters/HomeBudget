@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using HomeBudget.AuthService.CustomAttributes;
+using System.Text.Json.Serialization;
 
 namespace HomeBudget.AuthService.Models
 {
@@ -7,6 +8,7 @@ namespace HomeBudget.AuthService.Models
         public string? Email { get; set; }
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
+        [CustomDateValidation(ErrorMessage = "Birth date cannot be in the future or before 1900-01-01.")]
         public DateOnly? BirthDate { get; set; }
     }
 }
