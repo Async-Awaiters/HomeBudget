@@ -678,3 +678,4 @@ FodyWeavers.xsd
 *.sln.iml
 
 appsettings.json
+.vscode/settings.json
