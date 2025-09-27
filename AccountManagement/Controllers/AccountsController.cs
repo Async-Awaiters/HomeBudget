@@ -1,7 +1,6 @@
 using AccountManagement.EF.Models;
 using AccountManagement.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace AccountManagement.Controllers;
 
@@ -54,14 +53,12 @@ public class AccountsController : AccountManagementBaseController
             async () =>
             {
                 // Получение ID пользователя из токена (предполагается, что middleware установила ClaimsPrincipal)
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userId))
-                    return Forbid("Необходима авторизация");
+                var userId = GetUserId(HttpContext);
 
-                if (Guid.Parse(userId) != account.UserId)
+                if (userId != account.UserId)
                     return Forbid("Доступ запрещён");
 
-                await _accountService.CreateAsync(account, Guid.Parse(userId));
+                await _accountService.CreateAsync(account, userId);
 
                 return CreatedAtAction(nameof(GetAccountAsync), new { accountId = account.Id }, account);
             });
@@ -80,13 +77,13 @@ public class AccountsController : AccountManagementBaseController
                 var originalAccount = await _accountService.GetAsync(accountId);
 
                 // Проверка владельца
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (userId != originalAccount.UserId.ToString())
+                var userId = GetUserId(HttpContext);
+                if (userId != originalAccount.UserId)
                     return Forbid("Доступ запрещён");
 
                 // Обновление данных
                 updatedAccount.Id = accountId;  // Убедимся, что ID совпадает
-                await _accountService.UpdateAsync(updatedAccount, Guid.Parse(userId));
+                await _accountService.UpdateAsync(updatedAccount, userId);
 
                 return Ok();
             });
@@ -105,7 +102,8 @@ public class AccountsController : AccountManagementBaseController
                 var account = await _accountService.GetAsync(accountId);
 
                 // Проверка владельца
-                if (User.FindFirst(ClaimTypes.NameIdentifier)?.Value != account.UserId.ToString())
+                var userId = GetUserId(HttpContext);
+                if (userId != account.UserId)
                     return Forbid("Доступ запрещён");
 
                 await _accountService.DeleteAsync(accountId, userId);

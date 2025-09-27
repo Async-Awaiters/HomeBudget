@@ -91,4 +91,9 @@ public class TransactionsService : ITransactionsService
 
         await _transactionsRepository.DeleteAsync(transaction.Id, userId, tokenSource.Token);
     }
+
+    public Task ConfirmAsync(Guid transactionId, Guid userId)
+    {
+        throw new NotImplementedException();
+    }
 }

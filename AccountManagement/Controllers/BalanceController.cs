@@ -19,11 +19,14 @@ public class BalanceController : AccountManagementBaseController
     [HttpGet("balance")]
     [EndpointSummary("GetUserBalance")]
     [EndpointDescription("Получение баланса пользователя по всем активным счетам")]
-    public async Task<IActionResult> GetUserBalanceAsync([FromQuery] Guid userId)
+    public async Task<IActionResult> GetUserBalanceAsync()
     {
         return await ExecuteWithLogging(
             async () =>
             {
+                // Получение ID пользователя из токена
+                var userId = GetUserId(HttpContext);
+
                 // Получение всех активных счетов пользователя
                 var userAccounts = await _accountService.GetAllAsync(userId);
 
