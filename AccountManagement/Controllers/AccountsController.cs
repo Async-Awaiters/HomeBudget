@@ -16,21 +16,23 @@ public class AccountsController : AccountManagementBaseController
     }
 
     [HttpGet]
-    [Route("accounts/{userId:guid}")]
+    [Route("accounts")]
     [EndpointSummary("GetAllUserAccounts")]
     [EndpointDescription("Получение всех активных счетов пользователя")]
-    public async Task<IActionResult> GetAllUserAccountsAsync([FromQuery] Guid userId)
+    public async Task<IActionResult> GetAllUserAccountsAsync()
     {
         return await ExecuteWithLogging(
             async () =>
             {
+                // Получение ID пользователя из токена (предполагается, что middleware установила ClaimsPrincipal)
+                var userId = GetUserId(HttpContext);
                 var accounts = await _accountService.GetAllAsync(userId);
                 return Ok(accounts);
             });
     }
 
     [HttpGet]
-    [Route("account/{accountId:guid}")]
+    [Route("accounts/{accountId:guid}")]
     [EndpointSummary("GetAccount")]
     [EndpointDescription("Получение конкретного счета по ID")]
     public async Task<IActionResult> GetAccountAsync([FromRoute] Guid accountId)
@@ -93,7 +95,7 @@ public class AccountsController : AccountManagementBaseController
     [Route("accounts/{accountId:guid}")]
     [EndpointSummary("DeleteAccount")]
     [EndpointDescription("Удаление счета")]
-    public async Task<IActionResult> DeleteAccountAsync([FromRoute] Guid accountId, [FromQuery] Guid userId)
+    public async Task<IActionResult> DeleteAccountAsync([FromRoute] Guid accountId)
     {
         return await ExecuteWithLogging(
             async () =>

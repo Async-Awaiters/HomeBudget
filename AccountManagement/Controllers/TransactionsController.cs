@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace AccountManagement.Controllers;
 
 [ApiController]
-[Route("transactions")]
 public class TransactionsController : AccountManagementBaseController
 {
     private readonly IAccountService _accountService;
@@ -44,7 +43,8 @@ public class TransactionsController : AccountManagementBaseController
             });
     }
 
-    [HttpGet("{transactionId:guid}")]
+    [HttpGet]
+    [Route("transactions/{accountId:guid}/{transactionId:guid}")]
     [EndpointSummary("GetTransaction")]
     [EndpointDescription("Получение транзакции по ID")]
     public async Task<IActionResult> GetAccountTransactionAsync([FromRoute] Guid transactionId)
@@ -66,6 +66,7 @@ public class TransactionsController : AccountManagementBaseController
     }
 
     [HttpPost]
+    [Route("transactions")]
     [EndpointSummary("CreateTransaction")]
     [EndpointDescription("Создание новой транзакции")]
     public async Task<IActionResult> CreateTransactionAsync([FromBody] Transaction transaction)
@@ -84,7 +85,8 @@ public class TransactionsController : AccountManagementBaseController
             });
     }
 
-    [HttpPut("{transactionId:guid}")]
+    [HttpPut]
+    [Route("transactions/{transactionId:guid}")]
     [EndpointSummary("UpdateTransaction")]
     [EndpointDescription("Обновление транзакции")]
     public async Task<IActionResult> UpdateTransactionAsync([FromBody] Transaction updatedTransaction)
@@ -103,7 +105,8 @@ public class TransactionsController : AccountManagementBaseController
             });
     }
 
-    [HttpDelete("{transactionId:guid}")]
+    [HttpDelete]
+    [Route("transactions/{transactionId:guid}")]
     [EndpointSummary("DeleteTransaction")]
     [EndpointDescription("Удаление транзакции")]
     public async Task<IActionResult> DeleteTransactionAsync([FromRoute] Guid transactionId)
@@ -119,7 +122,10 @@ public class TransactionsController : AccountManagementBaseController
            });
     }
 
-    [HttpPatch("{transactionId:guid}/confirm")]
+    /*[HttpPatch]
+    [Route("transactions/{transactionId:guid}/confirm")]
+    [EndpointSummary("ConfirmTransaction")]
+    [EndpointDescription("Подтверждение транзакции")]
     public async Task<IActionResult> ConfirmTransactionAsync([FromRoute] Guid transactionId)
     {
         return await ExecuteWithLogging(
@@ -131,5 +137,5 @@ public class TransactionsController : AccountManagementBaseController
                 await _transactionsService.ConfirmAsync(transactionId, userId);
                 return NoContent();
             });
-    }
+    }*/
 }
