@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using HomeBudget.HealthCheck.Endpoints;
+using HomeBudget.HealthCheck.Services;
+using Microsoft.AspNetCore.Builder;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,7 @@ builder.Services
     .AddInMemoryStorage();
 
 builder.Services.AddHealthChecks();
+builder.Services.AddHttpClient<HealthCheckFacade>();
 
 var app = builder.Build();
 
@@ -24,5 +27,7 @@ app.MapHealthChecksUI(options =>
     options.UIPath = "/health-ui"; // UI доступен по адресу http://localhost:5000/health-ui
     options.ApiPath = "/health-api"; // JSON API для UI
 });
+
+app.MapCustomHealthCheckEndpoints();
 
 app.Run();
