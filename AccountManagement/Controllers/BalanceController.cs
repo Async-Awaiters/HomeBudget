@@ -1,10 +1,12 @@
 using AccountManagement.EF.Exceptions;
 using AccountManagement.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccountManagement.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("[controller]")]
 public class BalanceController : AccountManagementBaseController
 {
@@ -16,7 +18,7 @@ public class BalanceController : AccountManagementBaseController
         _accountService = accountService;
     }
 
-    [HttpGet("balance")]
+    [HttpGet]
     [EndpointSummary("GetUserBalance")]
     [EndpointDescription("Получение баланса пользователя по всем активным счетам")]
     public async Task<IActionResult> GetUserBalanceAsync()

@@ -1,10 +1,12 @@
 using AccountManagement.EF.Models;
 using AccountManagement.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccountManagement.Controllers;
 
 [ApiController]
+[Authorize]
 public class AccountsController : AccountManagementBaseController
 {
     private readonly IAccountService _accountService;

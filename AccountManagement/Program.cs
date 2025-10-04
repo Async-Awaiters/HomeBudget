@@ -1,6 +1,7 @@
 using System.Text;
 using AccountManagement.EF;
 using AccountManagement.EF.Repositories.Interfaces;
+using AccountManagement.Middleware;
 using AccountManagement.Services;
 using AccountManagement.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -29,6 +30,18 @@ builder.Services.AddLogging(loggingBuilder =>
        loggingBuilder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
        loggingBuilder.AddNLog(config);
    });
+
+// Настройка Cors
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()   // Разрешает все источники (origins)
+              .AllowAnyHeader()   // Разрешает все заголовки
+              .AllowAnyMethod()   // Разрешает все HTTP-методы (GET, POST, OPTIONS и т.д.)
+              .WithExposedHeaders("Authorization", "X-Custom-Header");
+    });
+});
 
 builder.Services.AddDbContext<AccountManagementContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("postgreSQL")));
@@ -105,6 +118,8 @@ builder.Services
 var app = builder.Build();
 
 app.UseCors("AllowAll");
+
+app.UseExceptionMiddleware();
 
 app.UseAuthentication();
 app.UseAuthorization();

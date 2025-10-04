@@ -1,10 +1,12 @@
 using AccountManagement.EF.Models;
 using AccountManagement.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccountManagement.Controllers;
 
 [ApiController]
+[Authorize]
 public class TransactionsController : AccountManagementBaseController
 {
     private readonly IAccountService _accountService;
@@ -122,7 +124,7 @@ public class TransactionsController : AccountManagementBaseController
            });
     }
 
-    /*[HttpPatch]
+    [HttpPatch]
     [Route("transactions/{transactionId:guid}/confirm")]
     [EndpointSummary("ConfirmTransaction")]
     [EndpointDescription("Подтверждение транзакции")]
@@ -137,5 +139,5 @@ public class TransactionsController : AccountManagementBaseController
                 await _transactionsService.ConfirmAsync(transactionId, userId);
                 return NoContent();
             });
-    }*/
+    }
 }
