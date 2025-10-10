@@ -1,22 +1,59 @@
 ﻿using HomeBudget.HealthCheck.Endpoints;
 using HomeBudget.HealthCheck.Services;
 using Microsoft.AspNetCore.Builder;
+using System.Collections;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Подключаем HealthChecks и UI из appsettings.json
+// Настройка логирования
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+var logger = LoggerFactory.Create(cfg => cfg.AddConsole()).CreateLogger("HealthCheckInit");
+
+// Подключаем стандартные сервисы
+builder.Services.AddHealthChecks();
+builder.Services.AddHttpClient<HealthCheckFacade>();
+
+// Подключаем HealthChecks UI, полностью через переменные окружения
 builder.Services
     .AddHealthChecksUI(options =>
     {
-        options.SetEvaluationTimeInSeconds(
-            builder.Configuration.GetValue<int>("HealthChecksUI:EvaluationTimeInSeconds", 10));
-        options.SetMinimumSecondsBetweenFailureNotifications(
-            builder.Configuration.GetValue<int>("HealthChecksUI:MinimumSecondsBetweenFailureNotifications", 20));
+        int evalSeconds = int.TryParse(Environment.GetEnvironmentVariable("HEALTH_EVAL_SECONDS"), out var s) ? s : 10;
+        int failNotifySeconds = int.TryParse(Environment.GetEnvironmentVariable("HEALTH_NOTIFY_SECONDS"), out var n) ? n : 20;
+
+        options.SetEvaluationTimeInSeconds(evalSeconds);
+        options.SetMinimumSecondsBetweenFailureNotifications(failNotifySeconds);
+
+        int registeredCount = 0;
+
+        foreach (DictionaryEntry env in Environment.GetEnvironmentVariables())
+        {
+            string key = env.Key.ToString() ?? "";
+            if (key.StartsWith("HEALTH_", StringComparison.OrdinalIgnoreCase))
+            {
+                string name = key.Replace("HEALTH_", "").Replace("_", " ");
+                string? uri = env.Value?.ToString();
+
+                if (!string.IsNullOrWhiteSpace(uri))
+                {
+                    options.AddHealthCheckEndpoint(name, uri);
+                    registeredCount++;
+                    logger.LogInformation("Registered health endpoint: {Name} → {Uri}", name, uri);
+                }
+            }
+        }
+
+        if (registeredCount == 0)
+        {
+            logger.LogError("No HEALTH_* environment variables found — HealthCheck UI will start empty.");
+        }
+        else
+        {
+            logger.LogInformation("Registered {Count} service(s) for monitoring.", registeredCount);
+        }
     })
     .AddInMemoryStorage();
-
-builder.Services.AddHealthChecks();
-builder.Services.AddHttpClient<HealthCheckFacade>();
 
 var app = builder.Build();
 
@@ -24,8 +61,8 @@ app.UseRouting();
 
 app.MapHealthChecksUI(options =>
 {
-    options.UIPath = "/health-ui"; // UI доступен по адресу http://localhost:5000/health-ui
-    options.ApiPath = "/health-api"; // JSON API для UI
+    options.UIPath = "/health-ui";
+    options.ApiPath = "/health-api";
 });
 
 app.MapCustomHealthCheckEndpoints();
