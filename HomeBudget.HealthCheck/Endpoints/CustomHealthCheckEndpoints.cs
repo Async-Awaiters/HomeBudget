@@ -14,8 +14,11 @@ namespace HomeBudget.HealthCheck.Endpoints
 
                 return Results.Json(new
                 {
-                    overallStatus = result.Values.Any(r => r.ToString().Contains("Unhealthy"))
-                        ? "Unhealthy" : "Healthy",
+                    overallStatus = result.Values.Any(v =>
+                        v?.ToString()?.Contains("Unhealthy", StringComparison.OrdinalIgnoreCase) == true ||
+                        v?.ToString()?.Contains("Unreachable", StringComparison.OrdinalIgnoreCase) == true)
+                        ? "Unhealthy"
+                        : "Healthy",
                     services = result
                 });
             });

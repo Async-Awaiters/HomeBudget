@@ -1,0 +1,93 @@
+version: "3.9"
+
+networks:
+  homebudget-net:
+  caddy:
+    name: caddy
+    external: true
+
+volumes:
+  otus-pgdata:
+
+services:
+
+  postgres:
+    container_name: postgres_HomeBudget
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Не создаём базы заранее, они будут через скрипт
+    volumes:
+      - otus-pgdata:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    ports:
+      - "${POSTGRES_PORT}:5432"  # Доступ из хоста
+    networks:
+      - homebudget-net
+
+  authservice:
+    container_name: authservice_HomeBudget
+    build:
+      context: ./AuthService
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__postgreSQL: "Host=postgres;Port=5432;Database=${AUTH_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+    # ports:
+    #   - "${AUTH_PORT}:5000"  # Доступ извне по 5001
+    networks:
+      - homebudget-net
+      - caddy
+    depends_on:
+      - postgres
+    labels:
+      - "caddy=auth.homeb.nohat.ru"
+      - "caddy.reverse_proxy={{upstreams 5000}}"
+      - "caddy.encode=zstd gzip"
+
+  directories:
+    container_name: directories_HomeBudget
+    build:
+      context: ./Directories
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__postgreSQL: "Host=postgres;Port=5432;Database=${DIR_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+   # ports:
+   #   - "${DIR_PORT}:5000"
+    networks:
+      - homebudget-net
+      - caddy
+    depends_on:
+      - postgres
+    labels:
+      - "caddy=dir.homeb.nohat.ru"
+      - "caddy.reverse_proxy={{upstreams 5000}}"
+      - "caddy.encode=zstd gzip"
+
+  healthcheck:
+    container_name: healthcheck_HomeBudget
+    build:
+      context: ./HealthCheck
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - .env.healthcheck
+    environment:
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:5000
+   # ports:
+   #   - "5003:5003"
+    networks:
+      - homebudget-net
+      - caddy
+    labels:
+      - "caddy=health.homeb.nohat.ru"
+      - "caddy.reverse_proxy={{upstreams 5000}}"
+      - "caddy.encode=zstd gzip"

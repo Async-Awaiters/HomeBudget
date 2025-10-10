@@ -1,7 +1,7 @@
 ﻿using HomeBudget.HealthCheck.Endpoints;
+using HomeBudget.HealthCheck.Helpers;
 using HomeBudget.HealthCheck.Services;
 using Microsoft.AspNetCore.Builder;
-using System.Collections;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,34 +26,20 @@ builder.Services
         options.SetEvaluationTimeInSeconds(evalSeconds);
         options.SetMinimumSecondsBetweenFailureNotifications(failNotifySeconds);
 
-        int registeredCount = 0;
+        var endpoints = HealthEnvHelper.GetHealthEndpoints(logger);
 
-        foreach (DictionaryEntry env in Environment.GetEnvironmentVariables())
-        {
-            string key = env.Key.ToString() ?? "";
-
-            // Регистрируем только переменные с HEALTHURL_ как endpoint
-            if (key.StartsWith("HEALTHURL_", StringComparison.OrdinalIgnoreCase))
-            {
-                string name = key.Replace("HEALTHURL_", "").Replace("_", " ");
-                string? uri = env.Value?.ToString();
-
-                if (!string.IsNullOrWhiteSpace(uri))
-                {
-                    options.AddHealthCheckEndpoint(name, uri);
-                    registeredCount++;
-                    logger.LogInformation("Registered health endpoint: {Name} → {Uri}", name, uri);
-                }
-            }
-        }
-
-        if (registeredCount == 0)
+        if (endpoints.Count == 0)
         {
             logger.LogError("No HEALTHURL_* environment variables found — HealthCheck UI will start empty.");
         }
         else
         {
-            logger.LogInformation("Registered {Count} service(s) for monitoring.", registeredCount);
+            foreach (var (name, uri) in endpoints)
+            {
+                options.AddHealthCheckEndpoint(name, uri);
+            }
+
+            logger.LogInformation("Registered {Count} endpoint(s) for monitoring.", endpoints.Count);
         }
     })
     .AddInMemoryStorage();

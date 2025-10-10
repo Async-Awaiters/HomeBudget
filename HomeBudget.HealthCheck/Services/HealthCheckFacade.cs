@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using HomeBudget.HealthCheck.Helpers;
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace HomeBudget.HealthCheck.Services
@@ -7,17 +8,13 @@ namespace HomeBudget.HealthCheck.Services
     {
         private readonly HttpClient _httpClient;
         private readonly List<(string Name, string Uri)> _externalServices;
+        private readonly ILogger<HealthCheckFacade> _logger;
 
-        public HealthCheckFacade(HttpClient httpClient, IConfiguration configuration)
+        public HealthCheckFacade(HttpClient httpClient, ILogger<HealthCheckFacade> logger)
         {
             _httpClient = httpClient;
-
-            _externalServices = configuration
-                .GetSection("HealthChecksUI:HealthChecks")
-                .Get<List<Dictionary<string, string>>>()?
-                .Select(x => (Name: x["Name"], Uri: x["Uri"]))
-                .ToList()
-                ?? new List<(string, string)>();
+            _logger = logger;
+            _externalServices = HealthEnvHelper.GetHealthEndpoints(logger);
         }
 
         public async Task<Dictionary<string, object>> CheckAllAsync(CancellationToken cancellationToken = default)
@@ -28,6 +25,7 @@ namespace HomeBudget.HealthCheck.Services
             {
                 try
                 {
+                    _logger.LogInformation("Checking {Service} at {Uri}", service.Name, service.Uri);
                     var response = await _httpClient.GetAsync(service.Uri, cancellationToken);
 
                     var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
@@ -56,6 +54,8 @@ namespace HomeBudget.HealthCheck.Services
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Health check for {Service} failed", service.Name);
+
                     results[service.Name] = new
                     {
                         status = "Unreachable",
