@@ -1,4 +1,5 @@
-﻿using HomeBudget.AuthService.EF.Data;
+﻿using HealthChecks.UI.Client;
+using HomeBudget.AuthService.EF.Data;
 using HomeBudget.AuthService.EF.Repositories;
 using HomeBudget.AuthService.EF.Repositories.Interfaces;
 using HomeBudget.AuthService.Endpoints;
@@ -12,8 +13,10 @@ using HomeBudget.AuthService.ValidationHelpers.Implementations;
 using HomeBudget.AuthService.ValidationHelpers.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
@@ -44,6 +47,18 @@ builder.Services.AddCors(options =>
 // Подключение к БД
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("postgreSQL")));
+
+builder.Services.AddHealthChecks()
+// Проверка БД
+    .AddNpgSql(
+        builder.Configuration.GetConnectionString("postgreSQL")!,
+        name: "PostgreSQL",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: new[] { "db", "ready" },
+        timeout: TimeSpan.FromSeconds(5) // таймаут на соединение
+    )
+    // Проверка самого сервиса (жив ли процесс)
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "liveness" });
 
 // Репозитории, сервисы и хелперы
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -160,7 +175,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready") || check.Tags.Contains("liveness"),
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -8,6 +8,7 @@
   </PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="Scalar.AspNetCore" Version="2.2.5" />
 	</ItemGroup>
@@ -26,7 +27,9 @@
 	</PackageReference>
 	</ItemGroup>
 
-
+	<ItemGroup>
+		<PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
+	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\HomeBudget.AuthService.EF\HomeBudget.AuthService.EF.csproj" />
@@ -36,6 +39,12 @@
 	  <Content Update="appsettings.json">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Properties\launchSettings.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>
