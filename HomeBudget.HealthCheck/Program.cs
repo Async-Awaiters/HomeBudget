@@ -19,6 +19,7 @@ builder.Services.AddHttpClient<HealthCheckFacade>();
 builder.Services
     .AddHealthChecksUI(options =>
     {
+        // Интервалы
         int evalSeconds = int.TryParse(Environment.GetEnvironmentVariable("HEALTH_EVAL_SECONDS"), out var s) ? s : 10;
         int failNotifySeconds = int.TryParse(Environment.GetEnvironmentVariable("HEALTH_NOTIFY_SECONDS"), out var n) ? n : 20;
 
@@ -30,9 +31,11 @@ builder.Services
         foreach (DictionaryEntry env in Environment.GetEnvironmentVariables())
         {
             string key = env.Key.ToString() ?? "";
-            if (key.StartsWith("HEALTH_", StringComparison.OrdinalIgnoreCase))
+
+            // Регистрируем только переменные с HEALTHURL_ как endpoint
+            if (key.StartsWith("HEALTHURL_", StringComparison.OrdinalIgnoreCase))
             {
-                string name = key.Replace("HEALTH_", "").Replace("_", " ");
+                string name = key.Replace("HEALTHURL_", "").Replace("_", " ");
                 string? uri = env.Value?.ToString();
 
                 if (!string.IsNullOrWhiteSpace(uri))
@@ -46,7 +49,7 @@ builder.Services
 
         if (registeredCount == 0)
         {
-            logger.LogError("No HEALTH_* environment variables found — HealthCheck UI will start empty.");
+            logger.LogError("No HEALTHURL_* environment variables found — HealthCheck UI will start empty.");
         }
         else
         {
