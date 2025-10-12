@@ -9,9 +9,10 @@ public class AccountManagementContext : DbContext
     public DbSet<Account> Accounts { get; set; } = null!;
     public DbSet<Transaction> Transactions { get; set; } = null!;
 
+
+    // TODO: Добавить миграции
     public AccountManagementContext(DbContextOptions<AccountManagementContext> options) : base(options)
     {
-        Database.EnsureDeleted();
         Database.EnsureCreated();
     }
 

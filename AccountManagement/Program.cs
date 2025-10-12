@@ -4,6 +4,8 @@ using AccountManagement.EF.Repositories.Interfaces;
 using AccountManagement.Middleware;
 using AccountManagement.Services;
 using AccountManagement.Services.Interfaces;
+using AccountManagement.TransactionProcessing;
+using AccountManagement.TransactionProcessing.Strategies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -17,8 +19,6 @@ var logger = LogManager.Setup().GetCurrentClassLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
-
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -27,9 +27,9 @@ var config = new ConfigurationBuilder()
 builder.Services.AddLogging(loggingBuilder =>
     {
         loggingBuilder.ClearProviders();
-       loggingBuilder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
-       loggingBuilder.AddNLog(config);
-   });
+        loggingBuilder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug);
+        loggingBuilder.AddNLog(config);
+    });
 
 // Настройка Cors
 builder.Services.AddCors(options =>
@@ -53,6 +53,14 @@ builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
 // Сервисы
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ITransactionsService, TransactionsService>();
+
+// Стратегии
+builder.Services.AddScoped<ITransactionCheckStrategy, CashCheckStrategy>();
+builder.Services.AddScoped<ITransactionCheckStrategy, DebitCardCheckStrategy>();
+builder.Services.AddScoped<ITransactionCheckStrategy, CreditCardCheckStrategy>();
+
+builder.Services.AddScoped<ITransactionStrategyFactory, TransactionCheckStrategyFactory>();
+builder.Services.AddScoped<ITransactionProcessor, TransactionProcessor>();
 
 // Аутентификация JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -112,7 +120,7 @@ if (builder.Environment.IsDevelopment())
 }
 
 builder.Services
-    .AddControllers()
+    .AddControllers(options => { options.SuppressAsyncSuffixInActionNames = false; })
     .AddNewtonsoftJson();
 
 var app = builder.Build();

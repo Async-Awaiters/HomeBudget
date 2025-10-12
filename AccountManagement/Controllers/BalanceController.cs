@@ -5,6 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AccountManagement.Controllers;
 
+/// <summary>
+/// Контроллер для управления балансом пользователей
+/// </summary>
+/// <remarks>
+/// Реализует функциональность получения общего баланса пользователя
+/// по всем активным счетам через HTTP API.
+/// Требует авторизации для доступа.
+/// </remarks>
 [ApiController]
 [Authorize]
 [Route("[controller]")]
@@ -12,12 +20,22 @@ public class BalanceController : AccountManagementBaseController
 {
     private readonly IAccountService _accountService;
 
+    /// <summary>
+    /// Инициализирует новый экземпляр <see cref="BalanceController"/>
+    /// </summary>
+    /// <param name="logger">Логгер для записи событий</param>
+    /// <param name="accountService">Сервис для работы с аккаунтами</param>
     public BalanceController(ILogger<AccountsController> logger, IAccountService accountService)
         : base(logger)
     {
         _accountService = accountService;
     }
 
+    /// <summary>
+    /// Асинхронно возвращает общий баланс пользователя
+    /// </summary>
+    /// <returns>HTTP-ответ с объектом содержащим поле TotalBalance</returns>
+    /// <exception cref="EntityNotFoundException">Если у пользователя нет активных аккаунтов</exception>
     [HttpGet]
     [EndpointSummary("GetUserBalance")]
     [EndpointDescription("Получение баланса пользователя по всем активным счетам")]

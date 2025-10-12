@@ -5,10 +5,20 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AccountManagement.Controllers;
 
+/// <summary>
+/// Базовый контроллер для управления учетными записями
+/// </summary>
 public abstract class AccountManagementBaseController : ControllerBase
 {
+    /// <summary>
+    /// Логгер для записи информации о выполнении операций
+    /// </summary>
     protected readonly ILogger<AccountManagementBaseController> _logger;
 
+    /// <summary>
+    /// Инициализирует новый экземпляр класса <see cref="AccountManagementBaseController"/>
+    /// </summary>
+    /// <param name="logger">Логгер для регистрации событий</param>
     public AccountManagementBaseController(ILogger<AccountManagementBaseController> logger)
     {
         _logger = logger;
@@ -17,6 +27,14 @@ public abstract class AccountManagementBaseController : ControllerBase
     /// <summary>
     /// Выполняет операцию с логированием и обработкой исключений
     /// </summary>
+    /// <param name="operation">Делегат асинхронной операции</param>
+    /// <returns>HTTP-ответ с результатом выполнения операции</returns>
+    /// <exception cref="AccessDeniedException">Если доступ запрещен</exception>
+    /// <exception cref="EntityAlreadyExistsException">Если сущность уже существует</exception>
+    /// <exception cref="EntityNotFoundException">Если сущность не найдена</exception>
+    /// <exception cref="InvalidTransactionException">Если транзакция не может быть выполнена</exception>
+    /// <exception cref="ArgumentNullException">Если передан null в обязательный параметр</exception>
+    /// <exception cref="Exception">При других ошибках выполнения</exception>
     protected async Task<IActionResult> ExecuteWithLogging(Func<Task<IActionResult>> operation)
     {
         try
@@ -38,6 +56,11 @@ public abstract class AccountManagementBaseController : ControllerBase
             _logger.LogError(ex, ex.Message);
             return NotFound(ex.Message);
         }
+        catch (InvalidTransactionException ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            return BadRequest(ex.Message);
+        }
         catch (ArgumentNullException ex)
         {
             _logger.LogError(ex, ex.Message);
@@ -51,15 +74,11 @@ public abstract class AccountManagementBaseController : ControllerBase
     }
 
     /// <summary>
-    /// Возвращает ID пользователя из токена
+    /// Извлекает идентификатор пользователя из контекста HTTP-запроса
     /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
-    /// <exception cref="UnauthorizedAccessException"></exception> <summary>
-    ///
-    /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
+    /// <param name="context">Контекст HTTP-запроса</param>
+    /// <returns>Уникальный идентификатор пользователя (GUID)</returns>
+    /// <exception cref="AccessDeniedException">Если отсутствует или недействителен идентификатор пользователя</exception>
     protected static Guid GetUserId(HttpContext context)
     {
         var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

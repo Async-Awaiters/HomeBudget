@@ -5,18 +5,38 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AccountManagement.Controllers;
 
+/// <summary>
+/// Контроллер для управления банковскими счетами пользователей
+/// </summary>
+/// <remarks>
+/// Реализует CRUD-операции над счетами через сервис IAccountService
+/// Все методы требуют авторизации пользователя
+/// </remarks>
 [ApiController]
 [Authorize]
 public class AccountsController : AccountManagementBaseController
 {
     private readonly IAccountService _accountService;
 
+    /// <summary>
+    /// Инициализирует новый экземпляр контроллера
+    /// </summary>
+    /// <param name="logger">Логгер для регистрации событий</param>
+    /// <param name="accountService">Сервис для работы со счетами</param>
     public AccountsController(ILogger<AccountsController> logger, IAccountService accountService)
         : base(logger)
     {
         _accountService = accountService;
     }
 
+    /// <summary>
+    /// Получает все активные счета текущего авторизованного пользователя
+    /// </summary>
+    /// <returns>Список счетов в формате JSON или статусный код</returns>
+    /// <remarks>
+    /// Извлекает ID пользователя из токена аутентификации
+    /// Фильтрует только активные счета
+    /// </remarks>
     [HttpGet]
     [Route("accounts")]
     [EndpointSummary("GetAllUserAccounts")]
@@ -33,6 +53,11 @@ public class AccountsController : AccountManagementBaseController
             });
     }
 
+    /// <summary>
+    /// Получает конкретный счет по указанному идентификатору
+    /// </summary>
+    /// <param name="accountId">Уникальный идентификатор счета в формате GUID</param>
+    /// <returns>Данные счета или статус 404 Not Found</returns>
     [HttpGet]
     [Route("accounts/{accountId:guid}")]
     [EndpointSummary("GetAccount")]
@@ -47,6 +72,12 @@ public class AccountsController : AccountManagementBaseController
             });
     }
 
+    /// <summary>
+    /// Создает новый банковский счет для текущего пользователя
+    /// </summary>
+    /// <param name="account">Модель счета с данными для создания</param>
+    /// <returns>Созданный счет с HTTP 201 Created или статус 403 Forbidden</returns>
+    /// <exception cref="ForbiddenAccessException">Если UserId в модели не совпадает с текущим пользователем</exception>
     [HttpPost]
     [Route("accounts")]
     [EndpointSummary("CreateAccount")]
@@ -68,6 +99,13 @@ public class AccountsController : AccountManagementBaseController
             });
     }
 
+    /// <summary>
+    /// Обновляет данные существующего банковского счета
+    /// </summary>
+    /// <param name="accountId">Идентификатор счета для обновления</param>
+    /// <param name="updatedAccount">Объект с новыми данными счета</param>
+    /// <returns>Статус 200 OK при успешном обновлении или 403 Forbidden</returns>
+    /// <exception cref="NotFoundException">Если указанный счет не существует</exception>
     [HttpPut]
     [Route("accounts/{accountId:guid}")]
     [EndpointSummary("UpdateAccount")]
@@ -93,6 +131,12 @@ public class AccountsController : AccountManagementBaseController
             });
     }
 
+    /// <summary>
+    /// Удаляет банковский счет по указанному идентификатору
+    /// </summary>
+    /// <param name="accountId">GUID счета для удаления</param>
+    /// <returns>Статус 204 No Content при успешном удалении или 403 Forbidden</returns>
+    /// <exception cref="NotFoundException">Если указанный счет не существует</exception>
     [HttpDelete]
     [Route("accounts/{accountId:guid}")]
     [EndpointSummary("DeleteAccount")]

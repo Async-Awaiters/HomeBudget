@@ -6,13 +6,13 @@
     <UserSecretsId>dotnet-HomeBudget.Directories-430a5f18-8632-4b00-bb10-9943ab6fccf6</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.2.5" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.8.11" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.20" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.20" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

@@ -29,7 +29,7 @@ public class TransactionsRepository : ITransactionsRepository
     /// <summary>
     /// Создает новую транзакцию
     /// </summary>
-    public async Task CreateAsync(Transaction transaction, Guid userId, CancellationToken cancellationToken)
+    public async Task CreateAsync(Transaction transaction, CancellationToken cancellationToken)
     {
         await ExecuteWithLogging(
             async () =>
