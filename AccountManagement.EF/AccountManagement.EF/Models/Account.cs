@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+
 namespace AccountManagement.EF.Models;
 
 /// <summary>
@@ -58,5 +60,6 @@ public class Account
     /// <summary>
     /// Список транзакций, связанных с данным счётом.
     /// </summary>
-    public List<Transaction> Transactions { get; set; } = []; // Транзакции связанные со счётом
+    [JsonProperty("transactions", ReferenceLoopHandling = ReferenceLoopHandling.Serialize)]
+    public ICollection<Transaction> Transactions { get; } = new List<Transaction>(); // Транзакции связанные со счётом
 }

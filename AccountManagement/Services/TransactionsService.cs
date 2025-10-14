@@ -97,7 +97,7 @@ public class TransactionsService : ITransactionsService
         using var accountTokenSource = new CancellationTokenSource(millisecondsDelay);
 
         // Проверка существования счета
-        var account = await _accountRepository.GetByIdAsync(transaction.AccountId, accountTokenSource.Token);
+        var account = await _accountRepository.GetByIdAsync(transaction.AccountId!.Value, accountTokenSource.Token);
         if (account is null)
             throw new EntityNotFoundException("Счет не найден.");
 
@@ -106,6 +106,11 @@ public class TransactionsService : ITransactionsService
             throw new AccessDeniedException("Недостаточно прав.");
 
         await _transactionProcessor.AddTransaction(transaction, account);
+
+        // Обновление баланса счета
+        account.Balance += transaction.Amount;
+        using var updateTokenSource = new CancellationTokenSource(millisecondsDelay);
+        await _accountRepository.UpdateAsync(account, updateTokenSource.Token);
     }
 
     /// <summary>
@@ -124,11 +129,17 @@ public class TransactionsService : ITransactionsService
 
         using var tokenSource = new CancellationTokenSource(millisecondsDelay);
         using var accountTokenSource = new CancellationTokenSource(millisecondsDelay);
-        var account = await _accountRepository.GetByIdAsync(existedTransaction.AccountId, accountTokenSource.Token);
+        var account = await _accountRepository.GetByIdAsync(existedTransaction.AccountId!.Value, accountTokenSource.Token);
         if (account is null || userId != account.UserId)
             throw new AccessDeniedException("Доступ запрещён");
 
         await _transactionProcessor.UpdateTransaction(transaction, account);
+
+        // Обновление баланса счета
+        var diff = existedTransaction!.Amount - transaction.Amount;
+        account.Balance += diff;
+        using var updateTokenSource = new CancellationTokenSource(millisecondsDelay);
+        await _accountRepository.UpdateAsync(account, updateTokenSource.Token);
     }
 
     /// <summary>
@@ -147,7 +158,7 @@ public class TransactionsService : ITransactionsService
 
         using var tokenSource = new CancellationTokenSource(millisecondsDelay);
         using var accountTokenSource = new CancellationTokenSource(millisecondsDelay);
-        var account = await _accountRepository.GetByIdAsync(transaction.AccountId, accountTokenSource.Token);
+        var account = await _accountRepository.GetByIdAsync(transaction.AccountId!.Value, accountTokenSource.Token);
         if (account is null)
             throw new EntityNotFoundException("Счет не найден.");
 
@@ -155,6 +166,11 @@ public class TransactionsService : ITransactionsService
             throw new AccessDeniedException("Недостаточно прав.");
 
         await _transactionProcessor.RemoveTransaction(transaction, userId, account);
+
+        // Обновление баланса счета
+        account.Balance -= transaction.Amount;
+        using var updateTokenSource = new CancellationTokenSource(millisecondsDelay);
+        await _accountRepository.UpdateAsync(account, updateTokenSource.Token);
     }
 
     /// <summary>

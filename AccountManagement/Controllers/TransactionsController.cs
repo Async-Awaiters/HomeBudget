@@ -73,7 +73,7 @@ public class TransactionsController : AccountManagementBaseController
                 var transaction = await _transactionsService.GetAsync(transactionId);
 
                 // Проверка владельца через связанный аккаунт
-                var account = await _accountService.GetAsync(transaction.AccountId);
+                var account = await _accountService.GetAsync(transaction.AccountId!.Value);
                 var userId = GetUserId(HttpContext);
                 if (account == null || userId != account.UserId)
                     return Forbid("Доступ запрещён");

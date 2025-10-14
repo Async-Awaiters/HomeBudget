@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace AccountManagement.EF.Models;
 
 /// <summary>
@@ -23,7 +25,7 @@ public class Transaction
     /// <summary>
     /// Идентификатор связанной учетной записи
     /// </summary>
-    public Guid AccountId { get; set; }
+    public Guid? AccountId { get; set; }
 
     /// <summary>
     /// Сумма транзакции в валюте учетной записи
@@ -53,5 +55,5 @@ public class Transaction
     /// <summary>
     /// Связанная учетная запись, к которой относится транзакция
     /// </summary>
-    public Account Account { get; set; } = null!;
+    public Account? Account { get; set; }
 }

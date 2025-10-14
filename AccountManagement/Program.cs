@@ -121,7 +121,9 @@ if (builder.Environment.IsDevelopment())
 
 builder.Services
     .AddControllers(options => { options.SuppressAsyncSuffixInActionNames = false; })
-    .AddNewtonsoftJson();
+    .AddNewtonsoftJson(
+        options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+    );
 
 var app = builder.Build();
 

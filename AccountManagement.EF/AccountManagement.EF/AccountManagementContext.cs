@@ -9,7 +9,6 @@ public class AccountManagementContext : DbContext
     public DbSet<Account> Accounts { get; set; } = null!;
     public DbSet<Transaction> Transactions { get; set; } = null!;
 
-
     // TODO: Добавить миграции
     public AccountManagementContext(DbContextOptions<AccountManagementContext> options) : base(options)
     {
@@ -49,7 +48,10 @@ public class AccountManagementContext : DbContext
             .Property(t => t.Amount)
             .HasDefaultValue(0);
         modelBuilder.Entity<Transaction>()
-            .HasOne(t => t.Account);
+            .HasOne(a => a.Account)
+            .WithMany(t => t.Transactions)
+            .HasForeignKey(a => a.AccountId)
+            .IsRequired();
         modelBuilder.Entity<Transaction>()
             .Property(t => t.Date)
             .HasDefaultValueSql("now()");

@@ -41,6 +41,7 @@ public class TransactionsRepository : ITransactionsRepository
 
                 await _context.Transactions.AddAsync(transaction, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
+
                 _logger.LogInformation("Транзакция {Id} успешно создана", transaction.Id);
             },
             transaction.Id,
@@ -66,7 +67,7 @@ public class TransactionsRepository : ITransactionsRepository
                     return; // Безопасное удаление без исключения
                 }
 
-                await CheckAccountExists(transaction.AccountId, userId, cancellationToken);
+                await CheckAccountExists(transaction.AccountId!.Value, userId, cancellationToken);
                 transaction.IsDeleted = true;
                 await _context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Транзакция {Id} успешно удалена", id);

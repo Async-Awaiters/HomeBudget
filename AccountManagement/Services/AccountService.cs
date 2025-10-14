@@ -35,14 +35,14 @@ public class AccountService : IAccountService
     /// <summary>
     /// Получает счет пользователя по идентификатору
     /// </summary>
-    /// <param name="userId">Идентификатор пользователя</param>
+    /// <param name="accountId">Идентификатор пользователя</param>
     /// <returns>Объект <see cref="Account"/> с данными пользователя</returns>
     /// <exception cref="EntityNotFoundException">Если счет не найден</exception>
-    public async Task<Account> GetAsync(Guid userId)
+    public async Task<Account> GetAsync(Guid accountId)
     {
         using var tokenSource = new CancellationTokenSource(millisecondsDelay);
 
-        Account account = await _accountRepository.GetByIdAsync(userId, tokenSource.Token)
+        Account account = await _accountRepository.GetByIdAsync(accountId, tokenSource.Token)
             ?? throw new EntityNotFoundException("Счет не найден.");
 
         return account;
