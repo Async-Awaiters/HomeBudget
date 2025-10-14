@@ -108,9 +108,7 @@ public class TransactionsService : ITransactionsService
         await _transactionProcessor.AddTransaction(transaction, account);
 
         // Обновление баланса счета
-        account.Balance += transaction.Amount;
-        using var updateTokenSource = new CancellationTokenSource(millisecondsDelay);
-        await _accountRepository.UpdateAsync(account, updateTokenSource.Token);
+        await UpdateAccountBalance(account, transaction.Amount);
     }
 
     /// <summary>
@@ -137,9 +135,7 @@ public class TransactionsService : ITransactionsService
 
         // Обновление баланса счета
         var diff = existedTransaction!.Amount - transaction.Amount;
-        account.Balance += diff;
-        using var updateTokenSource = new CancellationTokenSource(millisecondsDelay);
-        await _accountRepository.UpdateAsync(account, updateTokenSource.Token);
+        await UpdateAccountBalance(account, diff);
     }
 
     /// <summary>
@@ -168,9 +164,7 @@ public class TransactionsService : ITransactionsService
         await _transactionProcessor.RemoveTransaction(transaction, userId, account);
 
         // Обновление баланса счета
-        account.Balance -= transaction.Amount;
-        using var updateTokenSource = new CancellationTokenSource(millisecondsDelay);
-        await _accountRepository.UpdateAsync(account, updateTokenSource.Token);
+        await UpdateAccountBalance(account, -transaction.Amount);
     }
 
     /// <summary>
@@ -182,6 +176,18 @@ public class TransactionsService : ITransactionsService
     public Task ConfirmAsync(Guid transactionId, Guid userId)
     {
         throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Обновляет баланс счета после транзакции.
+    /// </summary>
+    /// <param name="account"> Счет для обновления. </param>
+    /// <param name="diff"> Разница между старым и новым балансом. </param>
+    private async Task UpdateAccountBalance(Account account, decimal diff)
+    {
+        account.Balance += diff;
+        using var updateTokenSource = new CancellationTokenSource(millisecondsDelay);
+        await _accountRepository.UpdateAsync(account, updateTokenSource.Token);
     }
 }
 
