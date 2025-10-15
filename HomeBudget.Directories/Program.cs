@@ -1,3 +1,4 @@
+using HealthChecks.UI.Client;
 using HomeBudget.Directories;
 using HomeBudget.Directories.EF.DAL;
 using HomeBudget.Directories.EF.DAL.Interfaces;
@@ -10,7 +11,9 @@ using HomeBudget.Directories.ValidationHelpers.Implementations;
 using HomeBudget.Directories.ValidationHelpers.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
@@ -36,13 +39,23 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<DirectoriesContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("postgreSQL")));
 
+builder.Services.AddHealthChecks()
+// Проверка БД
+    .AddNpgSql(
+        builder.Configuration.GetConnectionString("postgreSQL")!,
+        name: "PostgreSQL",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: new[] { "db", "ready" },
+        timeout: TimeSpan.FromSeconds(5) // таймаут на соединение
+    )
+    // Проверка самого сервиса (жив ли процесс)
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "liveness" });
+
 // Регистрация сервисов
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 builder.Services.AddScoped<IRequestValidator<CreateCategoryRequest>, CreateRequestValidator>();
 builder.Services.AddScoped<IRequestValidator<UpdateCategoryRequest>, UpdateRequestValidator>();
-
-
 
 // Регистрация репозиториев
 builder.Services.AddScoped<ICategoriesRepository, CategoriesRepository>();
@@ -151,7 +164,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready") || check.Tags.Contains("liveness"),
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.MapCurrencyEndpoints();
 app.MapCategoryEndpoints();

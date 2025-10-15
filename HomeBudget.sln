@@ -23,6 +23,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccountManagement", "Accoun
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccountManagement.EF", "AccountManagement.EF\AccountManagement.EF.csproj", "{B60A4800-7B8D-4CD0-AD62-8F75FB474034}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HealthCheck", "HealthCheck", "{EF7E460A-DE5E-43A9-8F61-137416371E7F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HomeBudget.HealthCheck", "HomeBudget.HealthCheck\HomeBudget.HealthCheck.csproj", "{166DDE79-7661-4ADD-BB33-4B53161FA0A5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +61,10 @@ Global
 		{B60A4800-7B8D-4CD0-AD62-8F75FB474034}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B60A4800-7B8D-4CD0-AD62-8F75FB474034}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B60A4800-7B8D-4CD0-AD62-8F75FB474034}.Release|Any CPU.Build.0 = Release|Any CPU
+		{166DDE79-7661-4ADD-BB33-4B53161FA0A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{166DDE79-7661-4ADD-BB33-4B53161FA0A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{166DDE79-7661-4ADD-BB33-4B53161FA0A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{166DDE79-7661-4ADD-BB33-4B53161FA0A5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -69,6 +77,7 @@ Global
 		{BB2179B0-BFA9-4B4E-B348-89406E0562C2} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
 		{0DEA098D-D652-42DE-A599-A22FE3FD08EA} = {E9CE164A-005B-4D8C-BBC5-D1219496F6B2}
 		{B60A4800-7B8D-4CD0-AD62-8F75FB474034} = {E9CE164A-005B-4D8C-BBC5-D1219496F6B2}
+		{166DDE79-7661-4ADD-BB33-4B53161FA0A5} = {EF7E460A-DE5E-43A9-8F61-137416371E7F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C294802D-55A1-4F6F-B898-32FFA6888360}
