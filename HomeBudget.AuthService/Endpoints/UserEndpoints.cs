@@ -16,7 +16,7 @@ public static class UserEndpoints
             validator.Validate(request);
 
             RegisterResponse response = await service.RegisterAsync(request);
-            return TypedResults.Ok(response);
+            return TypedResults.Created($"/api/users/{response.User.Id}" ,response);
         })
         .AllowAnonymous()
         .WithTags("Register")
@@ -30,9 +30,10 @@ public static class UserEndpoints
         {
             validator.Validate(request);
 
-            var token = await service.LoginAsync(request);
+            var (response, token) = await service.LoginAsync(request);
+
             context.Response.Headers.Append("Authorization", $"Bearer {token}");
-            return TypedResults.Ok();
+            return TypedResults.Ok(response);
         })
         .AllowAnonymous()
         .WithTags("Login")
