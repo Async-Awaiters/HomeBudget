@@ -135,8 +135,8 @@ public class AccountRepository : IAccountRepository
     {
         var exists = false;
 
-        var userAccounts = await _context.Accounts.Where(x => x.UserId == account.UserId && x.Id != account.Id).ToListAsync();
-        exists = userAccounts.Any(x => x.Name.Equals(account.Name, StringComparison.OrdinalIgnoreCase));
+        var userAccounts = await _context.Accounts.Where(x => x.UserId == account.UserId && x.Id != account.Id).ToListAsync(cancellationToken);
+        exists = userAccounts.Any(x => x.Name.Equals(account.Name, StringComparison.InvariantCulture));
 
         if (exists)
             throw new EntityAlreadyExistsException("Счет с таким именем уже существует у этого пользователя");
