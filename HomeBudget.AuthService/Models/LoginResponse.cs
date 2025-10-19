@@ -2,7 +2,7 @@
 
 namespace HomeBudget.AuthService.Models
 {
-    public class RegisterResponse
+    public class LoginResponse
     {
         [JsonPropertyName("user")]
         public required UserData User { get; set; }

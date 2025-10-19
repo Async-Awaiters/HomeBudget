@@ -67,7 +67,6 @@ namespace HomeBudget.AuthService.Services.Implementations
 
                 var response = new RegisterResponse
                 {
-                    Success = true,
                     User = new UserData
                     {
                         Id = user.Id,
@@ -89,7 +88,7 @@ namespace HomeBudget.AuthService.Services.Implementations
             }
         }
 
-        public async Task<string> LoginAsync(LoginRequest request)
+        public async Task<(LoginResponse, string)> LoginAsync(LoginRequest request)
         {
             using var cts = new CancellationTokenSource(_timeout);
 
@@ -104,8 +103,23 @@ namespace HomeBudget.AuthService.Services.Implementations
                 }
 
                 var token = GenerateJwtToken(user);
+
+                var response = new LoginResponse
+                {
+                    User = new UserData
+                    {
+                        Id = user.Id,
+                        Login = user.Login,
+                        Email = user.Email,
+                        FirstName = user.FirstName,
+                        LastName = user.LastName,
+                        RegDate = user.RegDate,
+                        BirthDate = user.BirthDate
+                    }
+                };
+
                 _logger.LogInformation("User logged in: {Login}", user.Login);
-                return token;
+                return (response, token);
             }
             catch (Exception ex)
             {
