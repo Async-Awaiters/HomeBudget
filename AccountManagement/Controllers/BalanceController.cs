@@ -25,7 +25,7 @@ public class BalanceController : AccountManagementBaseController
     /// </summary>
     /// <param name="logger">Логгер для записи событий</param>
     /// <param name="accountService">Сервис для работы с аккаунтами</param>
-    public BalanceController(ILogger<AccountsController> logger, IAccountService accountService)
+    public BalanceController(ILogger<BalanceController> logger, IAccountService accountService)
         : base(logger)
     {
         _accountService = accountService;

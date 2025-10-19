@@ -76,9 +76,9 @@ public class TransactionsService : ITransactionsService
     public async Task<List<Transaction>> GetAllAsync(Guid accountId)
     {
         using var tokenSource = new CancellationTokenSource(millisecondsDelay);
-        List<Transaction> transactions = await _transactionsRepository.GetAllAsync(accountId).ToListAsync();
+        List<Transaction> transactions = await _transactionsRepository.GetAllAsync(accountId).ToListAsync(tokenSource.Token);
 
-        if (transactions == null || !transactions.Any())
+        if (!transactions.Any())
             throw new EntityNotFoundException("Транзакции не найдены.");
 
         return transactions;

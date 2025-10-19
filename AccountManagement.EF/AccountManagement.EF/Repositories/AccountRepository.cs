@@ -37,7 +37,7 @@ public class AccountRepository : IAccountRepository
         await CheckNameUniqueness(account, cancellationToken);
 
         await _context.Accounts.AddAsync(account, cancellationToken);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
