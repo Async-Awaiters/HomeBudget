@@ -121,17 +121,8 @@ public class AccountRepository : IAccountRepository
         _context.Entry(existingAccount).CurrentValues.SetValues(account);
         _context.Entry(existingAccount).State = EntityState.Modified;
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        try
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
+
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>

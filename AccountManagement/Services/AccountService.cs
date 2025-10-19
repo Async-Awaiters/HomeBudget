@@ -35,7 +35,7 @@ public class AccountService : IAccountService
     /// <summary>
     /// Получает счет пользователя по идентификатору
     /// </summary>
-    /// <param name="accountId">Идентификатор пользователя</param>
+    /// <param name="accountId">Идентификатор счёта</param>
     /// <returns>Объект <see cref="Account"/> с данными пользователя</returns>
     /// <exception cref="EntityNotFoundException">Если счет не найден</exception>
     public async Task<Account> GetAsync(Guid accountId)

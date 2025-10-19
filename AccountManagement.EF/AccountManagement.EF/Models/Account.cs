@@ -10,7 +10,7 @@ public class Account
     /// <summary>
     /// Уникальный идентификатор счёта.
     /// </summary>
-    public required Guid Id { get; set; }
+    public Guid Id { get; set; }
 
     /// <summary>
     /// Наименование счёта (например, "Основной счёт", "Кредитный счёт").
