@@ -17,7 +17,4 @@
   <ItemGroup>
     <ProjectReference Include="..\AccountManagement.EF\AccountManagement.EF.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Configuration/" />
-  </ItemGroup>
 </Project>
