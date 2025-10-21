@@ -47,7 +47,8 @@ public class TransactionProcessor : ITransactionProcessor
         var strategy = _transactionStrategyFactory.GetStrategy(account.Type);
         try
         {
-            strategy.ProcessTransaction(transaction.Amount, account);
+            if (transaction.Amount < 0)
+                strategy.ProcessTransaction(transaction.Amount, account);
         }
         catch (InvalidTransactionException)
         {
