@@ -33,7 +33,7 @@ public class DebitCardCheckStrategy : ITransactionCheckStrategy
     /// </remarks>
     public void ProcessTransaction(decimal amount, Account account)
     {
-        var newBalance = account.Balance - amount;
+        var newBalance = account.Balance + amount;
         if (newBalance < 0)
         {
             if (-newBalance < account.OverdraftLimit)
