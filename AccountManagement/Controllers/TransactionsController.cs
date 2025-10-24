@@ -35,7 +35,7 @@ public class TransactionsController : AccountManagementBaseController
     /// <returns>Список транзакций или код ошибки.</returns>
     [HttpGet]
     [Route("transactions/{accountId:guid}")]
-    public async Task<IActionResult> GetAccountTransactionsAsync([FromQuery] Guid accountId)
+    public async Task<IActionResult> GetAccountTransactionsAsync([FromRoute] Guid accountId)
     {
         return await ExecuteWithLogging(
             async () =>
