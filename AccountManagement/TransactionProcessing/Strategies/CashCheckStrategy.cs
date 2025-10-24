@@ -24,7 +24,7 @@ public class CashCheckStrategy : ITransactionCheckStrategy
     /// </exception>
     public void ProcessTransaction(decimal amount, Account account)
     {
-        if (account.Balance - amount < 0)
+        if (account.Balance + amount < 0)
         {
             throw new InvalidTransactionException("Not enough money");
         }

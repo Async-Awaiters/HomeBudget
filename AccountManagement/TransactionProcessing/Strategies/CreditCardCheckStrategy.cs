@@ -26,7 +26,7 @@ public class CreditCardCheckStrategy : ITransactionCheckStrategy
     /// </exception>
     public void ProcessTransaction(decimal amount, Account account)
     {
-        var newBalance = account.Balance - amount;
+        var newBalance = account.Balance + amount;
         if (newBalance < 0)
         {
             // Если недостаточно средств и сумма превышает кредитный лимит
