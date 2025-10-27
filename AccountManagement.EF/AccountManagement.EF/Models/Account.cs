@@ -58,6 +58,11 @@ public class Account
     public bool IsDeleted { get; set; } = false;
 
     /// <summary>
+    /// Валюта, в которой хранится баланс счёта.
+    /// </summary>
+    public Guid CurrencyId { get; set; }
+
+    /// <summary>
     /// Список транзакций, связанных с данным счётом.
     /// </summary>
     [JsonProperty("transactions", ReferenceLoopHandling = ReferenceLoopHandling.Serialize)]
