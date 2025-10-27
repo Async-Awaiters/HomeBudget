@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
 
 namespace AccountManagement.EF.Models;
 
@@ -50,7 +50,13 @@ public class Transaction
     /// <summary>
     /// Флаг удаления транзакции из системы
     /// </summary>
+    [JsonIgnore]
     public bool IsDeleted { get; set; }
+
+    /// <summary>
+    /// Категория транзакции
+    /// </summary>
+    public Guid CategoryId { get; set; }
 
     /// <summary>
     /// Связанная учетная запись, к которой относится транзакция
