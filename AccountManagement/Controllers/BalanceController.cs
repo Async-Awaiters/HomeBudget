@@ -19,7 +19,6 @@ namespace AccountManagement.Controllers;
 public class BalanceController : AccountManagementBaseController
 {
     private readonly IAccountService _accountService;
-    private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
     /// <summary>
     /// Инициализирует новый экземпляр <see cref="BalanceController"/>
@@ -47,48 +46,18 @@ public class BalanceController : AccountManagementBaseController
             {
                 // Получение ID пользователя из токена
                 var userId = GetUserId(HttpContext);
-                decimal userBalance = 0;
 
-                // Ожидание доступа к критической секции
-                await _semaphore.WaitAsync();
-                try
-                {
-                    // Получение всех активных счетов пользователя
-                    var userAccounts = await _accountService.GetAllAsync(userId);
+                // Получение всех активных счетов пользователя
+                var userAccounts = await _accountService.GetAllAsync(userId);
 
-                    // Проверка на null и наличие элементов
-                    if (userAccounts == null || !userAccounts.Any())
-                        throw new EntityNotFoundException($"Аккаунты не найдены для пользователя с ID: {userId}");
+                // Проверка на null и наличие элементов
+                if (userAccounts == null || !userAccounts.Any())
+                    throw new EntityNotFoundException($"Аккаунты не найдены для пользователя с ID: {userId}");
 
-                    // Фильтрация активных счётов
-                    var activeAccounts = userAccounts.Where(acc => acc.IsActive).ToList();
-
-                    // Объект для синхронизации (необходим, так как lock работает только со ссылками)
-                    object balanceLock = new object();
-
-                    // Параллельное суммирование с использованием локальных накопителей
-                    Parallel.For(
-                        0,
-                        activeAccounts.Count,
-                        () => 0m,  // Инициализация локального накопителя (тип decimal)
-                        (int i, ParallelLoopState state, decimal localSum) =>
-                        {
-                            return localSum + activeAccounts[i].Balance;  // Локальное накопление
-                        },
-                        (decimal localSum) =>
-                        {
-                            lock (balanceLock)  // Синхронизация через отдельный объект
-                            {
-                                userBalance += localSum;
-                            }
-                        }
-                    );
-                }
-                finally
-                {
-                    // Освобождение семафора
-                    _semaphore.Release();
-                }
+                // Суммирование балансов всех активных счетов
+                var userBalance = userAccounts
+                    .Where(acc => acc.IsActive)
+                    .Sum(acc => acc.Balance);
 
                 return Ok(new { TotalBalance = userBalance });
             });
