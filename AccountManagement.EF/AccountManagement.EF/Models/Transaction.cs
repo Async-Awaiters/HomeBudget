@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AccountManagement.EF.Models;
 
@@ -61,5 +61,6 @@ public class Transaction
     /// <summary>
     /// Связанная учетная запись, к которой относится транзакция
     /// </summary>
+    [JsonIgnore]
     public Account? Account { get; set; }
 }

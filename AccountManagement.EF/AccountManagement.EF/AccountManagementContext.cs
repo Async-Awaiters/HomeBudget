@@ -12,7 +12,6 @@ public class AccountManagementContext : DbContext
     // TODO: Добавить миграции
     public AccountManagementContext(DbContextOptions<AccountManagementContext> options) : base(options)
     {
-        Database.EnsureDeleted();
         Database.EnsureCreated();
     }
 
