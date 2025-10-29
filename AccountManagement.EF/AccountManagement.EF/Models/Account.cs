@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace AccountManagement.EF.Models;
 
@@ -55,6 +55,7 @@ public class Account
     /// Флаг удаления счёта из системы.
     /// По умолчанию установлен в false.
     /// </summary>
+    [JsonIgnore]
     public bool IsDeleted { get; set; } = false;
 
     /// <summary>
@@ -65,6 +66,6 @@ public class Account
     /// <summary>
     /// Список транзакций, связанных с данным счётом.
     /// </summary>
-    [JsonProperty("transactions", ReferenceLoopHandling = ReferenceLoopHandling.Serialize)]
+    [JsonIgnore]
     public ICollection<Transaction> Transactions { get; } = new List<Transaction>(); // Транзакции связанные со счётом
 }
