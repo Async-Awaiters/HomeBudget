@@ -6,8 +6,11 @@ using AccountManagement.Services;
 using AccountManagement.Services.Interfaces;
 using AccountManagement.TransactionProcessing;
 using AccountManagement.TransactionProcessing.Strategies;
+using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NLog;
@@ -119,6 +122,18 @@ if (builder.Environment.IsDevelopment())
     });
 }
 
+builder.Services.AddHealthChecks()
+    // Проверка БД
+    .AddNpgSql(
+        builder.Configuration.GetConnectionString("postgreSQL")!,
+        name: "PostgreSQL",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: ["db", "ready"],
+        timeout: TimeSpan.FromSeconds(5) // таймаут на соединение
+    )
+    // Проверка самого сервиса (жив ли процесс)
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "liveness" });
+
 builder.Services
     .AddControllers(options => { options.SuppressAsyncSuffixInActionNames = false; })
     .AddNewtonsoftJson(
@@ -145,5 +160,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapControllers();
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready") || check.Tags.Contains("liveness"),
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.Run();
