@@ -194,9 +194,6 @@ public class TransactionsRepository : ITransactionsRepository
         if (string.IsNullOrWhiteSpace(transaction.Description) || transaction.Description.Length > 200)
             throw new ArgumentException("Описание транзакции должно быть не пустым и содержать не более 200 символов", nameof(transaction.Description));
 
-        if (transaction.Amount <= 0)
-            throw new ArgumentException("Сумма транзакции должна быть положительной", nameof(transaction.Amount));
-
         if (transaction.Date > DateTime.UtcNow)
             throw new ArgumentException("Дата транзакции не может быть в будущем", nameof(transaction.Date));
     }
