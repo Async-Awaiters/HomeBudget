@@ -147,6 +147,8 @@ if (builder.Environment.IsDevelopment())
 
 var app = builder.Build();
 
+app.UseStaticFiles();
+
 app.UseCors("AllowAll");
 
 app.UseExceptionMiddleware();
@@ -159,8 +161,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger(options => { options.RouteTemplate = "/openapi/{documentName}.json"; });
     app.MapScalarApiReference(options =>
     {
-        options.Title = "HomeBudget API";
+        options.Title = "HomeBudget Directories API";
         options.Theme = ScalarTheme.BluePlanet;
+        options.Favicon = "/directories.ico";
     });
 }
 

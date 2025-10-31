@@ -158,6 +158,8 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+app.UseStaticFiles();
+
 app.UseCors("AllowAll");
 
 app.UseExceptionMiddleware();
@@ -172,6 +174,7 @@ if (app.Environment.IsDevelopment())
     {
         options.Title = "HomeBudget AuthService API";
         options.Theme = ScalarTheme.Laserwave;
+        options.Favicon = "/auth.ico";
     });
 }
 

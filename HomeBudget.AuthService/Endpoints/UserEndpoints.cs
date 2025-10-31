@@ -19,7 +19,7 @@ public static class UserEndpoints
             return TypedResults.Created($"/api/users/{response.User.Id}" ,response);
         })
         .AllowAnonymous()
-        .WithTags("Register")
+        .WithTags("Authentication")
         .WithOpenApi(operation => new(operation)
         {
             Summary = "Регистрация нового пользователя",
@@ -36,7 +36,7 @@ public static class UserEndpoints
             return TypedResults.Ok(response);
         })
         .AllowAnonymous()
-        .WithTags("Login")
+        .WithTags("Authentication")
         .WithOpenApi(operation => new(operation)
         {
             Summary = "Логин",
@@ -81,7 +81,7 @@ public static class UserEndpoints
             return TypedResults.Ok();
         })
         .RequireAuthorization()
-        .WithTags("Logout")
+        .WithTags("Authentication")
         .WithOpenApi(operation => new(operation)
         {
             Summary = "Логаут",
