@@ -35,6 +35,8 @@ public class TransactionsController : AccountManagementBaseController
     /// <returns>Список транзакций или код ошибки.</returns>
     [HttpGet]
     [Route("transactions/{accountId:guid}")]
+    [EndpointSummary("GetAccountTransactions")]
+    [EndpointDescription("Получает все транзакции для указанного аккаунта.")]
     public async Task<IActionResult> GetAccountTransactionsAsync([FromRoute] Guid accountId)
     {
         return await ExecuteWithLogging(
@@ -64,6 +66,8 @@ public class TransactionsController : AccountManagementBaseController
     /// <returns>Объект транзакции или код ошибки.</returns>
     [HttpGet]
     [Route("transactions/{accountId:guid}/{transactionId:guid}")]
+    [EndpointSummary("GetAccountTransaction")]
+    [EndpointDescription("Получает конкретную транзакцию по её идентификатору.")]
     public async Task<IActionResult> GetAccountTransactionAsync([FromRoute] Guid transactionId)
     {
         return await ExecuteWithLogging(
@@ -89,6 +93,8 @@ public class TransactionsController : AccountManagementBaseController
     /// <returns>Созданный объект транзакции или код ошибки.</returns>
     [HttpPost]
     [Route("transactions")]
+    [EndpointSummary("CreateTransaction")]
+    [EndpointDescription("Создает новую транзакцию.")]
     public async Task<IActionResult> CreateTransactionAsync([FromBody] Transaction transaction)
     {
         return await ExecuteWithLogging(
@@ -112,6 +118,8 @@ public class TransactionsController : AccountManagementBaseController
     /// <returns>Статус успешного обновления или код ошибки.</returns>
     [HttpPut]
     [Route("transactions/{transactionId:guid}")]
+    [EndpointSummary("UpdateTransaction")]
+    [EndpointDescription("Обновляет существующую транзакцию.")]
     public async Task<IActionResult> UpdateTransactionAsync([FromBody] Transaction updatedTransaction)
     {
         return await ExecuteWithLogging(
@@ -135,6 +143,8 @@ public class TransactionsController : AccountManagementBaseController
     /// <returns>Статус успешного удаления или код ошибки.</returns>
     [HttpDelete]
     [Route("transactions/{transactionId:guid}")]
+    [EndpointSummary("DeleteTransaction")]
+    [EndpointDescription("Удаляет указанную транзакцию.")]
     public async Task<IActionResult> DeleteTransactionAsync([FromRoute] Guid transactionId)
     {
         return await ExecuteWithLogging(
@@ -155,6 +165,8 @@ public class TransactionsController : AccountManagementBaseController
     /// <returns>Статус успешного подтверждения или код ошибки.</returns>
     [HttpPatch]
     [Route("transactions/{transactionId:guid}/confirm")]
+    [EndpointSummary("ConfirmTransaction")]
+    [EndpointDescription("Подтверждает указанную транзакцию.")]
     public async Task<IActionResult> ConfirmTransactionAsync([FromRoute] Guid transactionId)
     {
         return await ExecuteWithLogging(

@@ -105,6 +105,8 @@ public class TransactionsService : ITransactionsService
         if (account.UserId != userId)
             throw new AccessDeniedException("Недостаточно прав.");
 
+        // Обработка транзакции
+        transaction.Id = Guid.NewGuid();
         await _transactionProcessor.AddTransaction(transaction, account);
 
         // Обновление баланса счета
