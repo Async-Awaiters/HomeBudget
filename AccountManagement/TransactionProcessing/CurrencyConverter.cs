@@ -19,6 +19,13 @@ public class CurrencyConverter : ICurrencyConverter
         _currencyIdsURL = CurrencyIdsURL;
     }
 
+    /// <summary>
+    /// Конвертирует сумму в рубли.
+    /// </summary>
+    /// <param name="amount"> Сумма в исходной валюте. </param>
+    /// <param name="currencyId"> Идентификатор валюты. </param>
+    /// <param name="token"> Токен для авторизации. </param>
+    /// <returns> Сумма в рублях. </returns>
     public async Task<decimal> ConvertToRublesAsync(decimal amount, Guid currencyId, string token)
     {
         if (CurrencyRates.Count == 0 || LastUpdate != DateOnly.FromDateTime(DateTime.Now))
@@ -28,16 +35,29 @@ public class CurrencyConverter : ICurrencyConverter
         return CurrencyRates[currencyId] * amount;
     }
 
+    /// <summary>
+    /// Обновляет курсы валют.
+    /// </summary>
+    /// <param name="token"> Токен для авторизации. </param>
+    /// <returns></returns>
     public async Task UpdateCurrencyRates(string token)
     {
-        CurrencyRates.Clear();
-        var newRates = await GetRates(token);
-        foreach (var (currency, rate) in newRates)
+        if (CurrencyRates.Count == 0 || LastUpdate != DateOnly.FromDateTime(DateTime.Now))
         {
-            CurrencyRates[currency] = rate;
+            CurrencyRates.Clear();
+            var newRates = await GetRates(token);
+            foreach (var (currency, rate) in newRates)
+            {
+                CurrencyRates[currency] = rate;
+            }
         }
     }
 
+    /// <summary>
+    /// Получает курсы валют.
+    /// </summary>
+    /// <param name="token"> Токен для авторизации. </param>
+    /// <returns></returns>
     private async Task<Dictionary<Guid, decimal>> GetRates(string token)
     {
         if (CurrencyIds.Count == 0)
@@ -77,6 +97,11 @@ public class CurrencyConverter : ICurrencyConverter
         return newRates;
     }
 
+    /// <summary>
+    /// Получает идентификаторы валют.
+    /// </summary>
+    /// <param name="token"> Токен для авторизации. </param>
+    /// <returns></returns>
     private async Task<Dictionary<string, Guid>> GetCurrencyIds(string token)
     {
         // Создаем экземпляр HttpClient
@@ -104,7 +129,7 @@ public class CurrencyConverter : ICurrencyConverter
 
         var currencyIds = new Dictionary<string, Guid>();
         foreach (var currency in jsonData)
-            currencyIds.Add(currency.Code, currency.Id);
+            currencyIds[currency.Code] = currency.Id;
         return currencyIds;
     }
 }

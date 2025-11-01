@@ -60,6 +60,7 @@ public class BalanceController : AccountManagementBaseController
                 var userId = GetUserId(HttpContext);
                 decimal userBalance = 0;
                 string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last() ?? "";
+                await _currencyConverter.UpdateCurrencyRates(token);
 
                 // Ожидание доступа к критической секции
                 await _semaphore.WaitAsync();
