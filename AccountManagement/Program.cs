@@ -57,6 +57,11 @@ builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ITransactionsService, TransactionsService>();
 
+builder.Services.AddSingleton<ICurrencyConverter>(converter => new CurrencyConverter(
+    builder.Configuration["ExternalServicesURLs:ExchangeRatesApi"] ?? string.Empty,
+    builder.Configuration["ExternalServicesURLs:DirrectoriesServices"] ?? string.Empty)
+);
+
 // Стратегии
 builder.Services.AddScoped<ITransactionCheckStrategy, CashCheckStrategy>();
 builder.Services.AddScoped<ITransactionCheckStrategy, DebitCardCheckStrategy>();
