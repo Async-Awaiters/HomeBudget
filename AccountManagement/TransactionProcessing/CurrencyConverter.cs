@@ -31,8 +31,9 @@ public class CurrencyConverter : ICurrencyConverter
         if (CurrencyRates.Count == 0 || LastUpdate != DateOnly.FromDateTime(DateTime.Now))
             await UpdateCurrencyRates(token);
 
-        // В реальной реализации конвертации можно использовать сторонние сервисы или библиотеки
-        return CurrencyRates[currencyId] * amount;
+        if (CurrencyRates.TryGetValue(currencyId, out var rate))
+            return rate * amount;
+        return 0;
     }
 
     /// <summary>
