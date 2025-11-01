@@ -1,5 +1,6 @@
 using AccountManagement.EF.Exceptions;
 using AccountManagement.Services.Interfaces;
+using AccountManagement.TransactionProcessing;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,6 +20,7 @@ namespace AccountManagement.Controllers;
 public class BalanceController : AccountManagementBaseController
 {
     private readonly IAccountService _accountService;
+    private readonly ICurrencyConverter _currencyConverter;
     private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
     /// <summary>
@@ -26,10 +28,19 @@ public class BalanceController : AccountManagementBaseController
     /// </summary>
     /// <param name="logger">Логгер для записи событий</param>
     /// <param name="accountService">Сервис для работы с аккаунтами</param>
-    public BalanceController(ILogger<BalanceController> logger, IAccountService accountService)
+    public BalanceController(ILogger<BalanceController> logger, IAccountService accountService, ICurrencyConverter currencyConverter)
         : base(logger)
     {
         _accountService = accountService;
+        _currencyConverter = currencyConverter;
+    }
+
+    /// <summary>
+    /// Возвращает баланс пользователя в рублях.
+    /// </summary>
+    private async Task<decimal> BalanceInRubles(Guid currencyId, decimal balance, string token)
+    {
+        return await _currencyConverter.ConvertToRublesAsync(balance, currencyId, token);
     }
 
     /// <summary>
@@ -48,6 +59,7 @@ public class BalanceController : AccountManagementBaseController
                 // Получение ID пользователя из токена
                 var userId = GetUserId(HttpContext);
                 decimal userBalance = 0;
+                string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last() ?? "";
 
                 // Ожидание доступа к критической секции
                 await _semaphore.WaitAsync();
@@ -67,22 +79,18 @@ public class BalanceController : AccountManagementBaseController
                     object balanceLock = new object();
 
                     // Параллельное суммирование с использованием локальных накопителей
-                    Parallel.For(
-                        0,
-                        activeAccounts.Count,
-                        () => 0m,  // Инициализация локального накопителя (тип decimal)
-                        (int i, ParallelLoopState state, decimal localSum) =>
+                    await Parallel.ForEachAsync(activeAccounts, new ParallelOptions
+                    {
+                        MaxDegreeOfParallelism = 8 // ограничить количество одновременных вызовов
+                    }, async (account, _) => // здесь _ — это CancellationToken, не используемый
+                    {
+                        decimal balance = await BalanceInRubles(account.CurrencyId, account.Balance, token);
+
+                        lock (balanceLock)
                         {
-                            return localSum + activeAccounts[i].Balance;  // Локальное накопление
-                        },
-                        (decimal localSum) =>
-                        {
-                            lock (balanceLock)  // Синхронизация через отдельный объект
-                            {
-                                userBalance += localSum;
-                            }
+                            userBalance += balance;
                         }
-                    );
+                    });
                 }
                 finally
                 {
