@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace AccountManagement.EF.Models;
@@ -25,6 +26,7 @@ public class Transaction
     /// <summary>
     /// Идентификатор связанной учетной записи
     /// </summary>
+    [ForeignKey(nameof(AccountId))]
     public Guid? AccountId { get; set; }
 
     /// <summary>
