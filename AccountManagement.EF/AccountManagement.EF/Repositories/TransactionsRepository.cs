@@ -12,11 +12,11 @@ public class TransactionsRepository : ITransactionsRepository
 {
     private readonly AccountManagementContext _context;
     // Используем выражения вместо строк для безопасного доступа к свойствам
-    private static readonly Func<Transaction, object>[] UpdatableProperties =
+    private static readonly (string Name, Func<Transaction, object> Getter)[] UpdatableProperties =
     [
-        t => t.Amount,
-        t => t.Description!,
-        t => t.Date
+        (nameof(Transaction.Amount), t => t.Amount),
+        (nameof(Transaction.Date), t => t.Date),
+        (nameof(Transaction.Description), t => t.Description!)
     ];
     private readonly ILogger<TransactionsRepository> _logger;
 
@@ -39,8 +39,15 @@ public class TransactionsRepository : ITransactionsRepository
                 if (await _context.Transactions.AnyAsync(x => x.Id == transaction.Id, cancellationToken))
                     throw new EntityAlreadyExistsException("Транзакция с таким ID уже существует");
 
-                await _context.Transactions.AddAsync(transaction, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
+                try
+                {
+                    await _context.Transactions.AddAsync(transaction, cancellationToken);
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Ошибка при создании транзакции {Id}", transaction.Id);
+                }
 
                 _logger.LogInformation("Транзакция {Id} успешно создана", transaction.Id);
             },
@@ -146,9 +153,9 @@ public class TransactionsRepository : ITransactionsRepository
                 }
 
                 // Обновление только допустимых свойств через выражения
-                foreach (var property in UpdatableProperties)
+                foreach (var (Name, Getter) in UpdatableProperties)
                 {
-                    _context.Entry(existingTransaction).Property(property.Method.Name).CurrentValue = property(existingTransaction);
+                    _context.Entry(existingTransaction).Property(Name).CurrentValue = Getter(transaction);
                 }
 
                 try

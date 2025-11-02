@@ -133,6 +133,7 @@ public class TransactionsService : ITransactionsService
         if (account is null || userId != account.UserId)
             throw new AccessDeniedException("Доступ запрещён");
 
+        // Обновление транзакции
         await _transactionProcessor.UpdateTransaction(transaction, account);
 
         // Обновление баланса счета
