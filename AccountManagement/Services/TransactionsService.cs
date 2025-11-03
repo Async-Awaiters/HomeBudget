@@ -73,10 +73,16 @@ public class TransactionsService : ITransactionsService
     /// <param name="accountId">Идентификатор счета.</param>
     /// <returns>Список транзакций.</returns>
     /// <exception cref="EntityNotFoundException">Если транзакции не найдены.</exception>
-    public async Task<List<Transaction>> GetAllAsync(Guid accountId)
+    public async Task<List<Transaction>> GetAllAsync(Guid accountId, DateTime? from = null, DateTime? to = null)
     {
+        from ??= DateTime.MinValue;
+        to ??= DateTime.MaxValue;
+
         using var tokenSource = new CancellationTokenSource(millisecondsDelay);
-        List<Transaction> transactions = await _transactionsRepository.GetAllAsync(accountId).ToListAsync(tokenSource.Token);
+        List<Transaction> transactions = await _transactionsRepository
+            .GetAllAsync(accountId)
+            .Where(t => t.Date >= from.Value && t.Date <= to.Value)
+            .ToListAsync(tokenSource.Token);
 
         if (!transactions.Any())
             throw new EntityNotFoundException("Транзакции не найдены.");
