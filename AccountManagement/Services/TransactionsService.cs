@@ -79,9 +79,11 @@ public class TransactionsService : ITransactionsService
         to ??= DateTime.MaxValue;
 
         using var tokenSource = new CancellationTokenSource(millisecondsDelay);
+        // Получение списка транзакций
+        var toDate = to.Value.Date.AddDays(1);
         List<Transaction> transactions = await _transactionsRepository
             .GetAllAsync(accountId)
-            .Where(t => t.Date >= from.Value && t.Date <= to.Value)
+            .Where(t => t.Date >= from.Value.Date && t.Date <= toDate)
             .ToListAsync(tokenSource.Token);
 
         if (!transactions.Any())

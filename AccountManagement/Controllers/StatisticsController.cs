@@ -66,7 +66,8 @@ namespace AccountManagement.Controllers
                         .Join(
                             accounts,
                             ut => ut.AccountId,
-                            a => a.Id, (t, a) => new ReportDataRow
+                            a => a.Id,
+                            (t, a) => new ReportDataRow
                             {
                                 CategoryId = t.CategoryId,
                                 CurrencyId = a.CurrencyId,

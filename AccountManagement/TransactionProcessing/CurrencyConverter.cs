@@ -13,10 +13,10 @@ public class CurrencyConverter : ICurrencyConverter
 
     private static DateOnly LastUpdate;
 
-    public CurrencyConverter(string CurrencyRatesURL, string CurrencyIdsURL)
+    public CurrencyConverter(string currencyRatesURL, string currencyIdsURL)
     {
-        _currencyRatesURL = CurrencyRatesURL;
-        _currencyIdsURL = CurrencyIdsURL;
+        _currencyRatesURL = currencyRatesURL;
+        _currencyIdsURL = currencyIdsURL;
     }
 
     /// <summary>

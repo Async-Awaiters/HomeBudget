@@ -111,4 +111,3 @@ public class TransactionProcessor : ITransactionProcessor
         await _transactionsRepository.UpdateAsync(transaction, tokenSource.Token);
     }
 }
-
