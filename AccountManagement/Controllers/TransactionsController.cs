@@ -55,6 +55,9 @@ public class TransactionsController : AccountManagementBaseController
                 // Получение транзакций
                 var transactions = await _transactionsService.GetAllAsync(accountId);
 
+                if (!transactions.Any())
+                    return NotFound("Транзакции не найдены");
+
                 return Ok(transactions);
             });
     }
