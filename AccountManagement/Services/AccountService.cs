@@ -54,7 +54,7 @@ public class AccountService : IAccountService
     /// <param name="accountId">Идентификатор аккаунта</param>
     /// <returns>Список объектов <see cref="Account"/></returns>
     /// <exception cref="EntityNotFoundException">Если счета не найдены</exception>
-    public async Task<List<Account>> GetAllAsync(Guid accountId)
+    public async Task<List<Account>> GetAllAsync(Guid accountId, DateTime? from = null, DateTime? to = null)
     {
         var accounts = await _accountRepository.GetAllAsync(accountId).ToListAsync();
 

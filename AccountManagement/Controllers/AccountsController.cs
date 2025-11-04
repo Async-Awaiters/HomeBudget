@@ -49,6 +49,8 @@ public class AccountsController : AccountManagementBaseController
                 // Получение ID пользователя из токена (предполагается, что middleware установила ClaimsPrincipal)
                 var userId = GetUserId(HttpContext);
                 var accounts = await _accountService.GetAllAsync(userId);
+                if (!accounts.Any())
+                    return NotFound("Аккаунты не найдены");
                 return Ok(accounts);
             });
     }
