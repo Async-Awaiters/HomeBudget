@@ -78,7 +78,7 @@ public class TransactionsService : ITransactionsService
         from ??= DateTime.MinValue;
         var fromDate = from.Value.Date.ToUniversalTime();
         to ??= DateTime.MaxValue;
-        var toDate = to.Value.Date.AddDays(1).ToUniversalTime();
+        var toDate = (to == DateTime.MaxValue) ? DateTime.MaxValue : to.Value.Date.AddDays(1).ToUniversalTime();
 
         using var tokenSource = new CancellationTokenSource(millisecondsDelay);
 
