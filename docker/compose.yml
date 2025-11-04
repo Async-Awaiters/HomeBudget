@@ -1,5 +1,3 @@
-version: "3.9"
-
 networks:
   homebudget-net:
   caddy:
@@ -18,7 +16,6 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      # Не создаём базы заранее, они будут через скрипт
     volumes:
       - otus-pgdata:/var/lib/postgresql/data
       - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
@@ -33,12 +30,16 @@ services:
       context: ./AuthService
       dockerfile: Dockerfile
     restart: always
+    env_file:
+      - .env.logging
     environment:
       DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT}
       ASPNETCORE_URLS: http://+:5000
       ConnectionStrings__postgreSQL: "Host=postgres;Port=5432;Database=${AUTH_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
-    # ports:
-    #   - "${AUTH_PORT}:5000"  # Доступ извне по 5001
+      Jwt__Secret: ${JWT__SECRET}
+      Jwt__Issuer: ${JWT__ISSUER}
+      Jwt__Audience: ${JWT__AUDIENCE}
+      Jwt__LifetimeMinutes: ${JWT__LIFETIMEMINUTES}
     networks:
       - homebudget-net
       - caddy
@@ -55,12 +56,16 @@ services:
       context: ./Directories
       dockerfile: Dockerfile
     restart: always
+    env_file:
+      - .env.logging
     environment:
       DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT}
       ASPNETCORE_URLS: http://+:5000
       ConnectionStrings__postgreSQL: "Host=postgres;Port=5432;Database=${DIR_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
-   # ports:
-   #   - "${DIR_PORT}:5000"
+      Jwt__Secret: ${JWT__SECRET}
+      Jwt__Issuer: ${JWT__ISSUER}
+      Jwt__Audience: ${JWT__AUDIENCE}
+      Jwt__LifetimeMinutes: ${JWT__LIFETIMEMINUTES}
     networks:
       - homebudget-net
       - caddy
@@ -78,16 +83,61 @@ services:
       dockerfile: Dockerfile
     restart: always
     env_file:
+      - .env.logging
       - .env.healthcheck
     environment:
       DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT}
       ASPNETCORE_URLS: http://+:5000
-   # ports:
-   #   - "5003:5003"
     networks:
       - homebudget-net
       - caddy
     labels:
       - "caddy=health.homeb.nohat.ru"
       - "caddy.reverse_proxy={{upstreams 5000}}"
+      - "caddy.encode=zstd gzip"
+
+  accountmanagement:
+    container_name: accountmanagement_HomeBudget
+    build:
+      context: ./AccountManagement
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - .env.logging
+    environment:
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__postgreSQL: "Host=postgres;Port=5432;Database=${ACCOUNT_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Jwt__Secret: ${JWT__SECRET}
+      Jwt__Issuer: ${JWT__ISSUER}
+      Jwt__Audience: ${JWT__AUDIENCE}
+      Jwt__LifetimeMinutes: ${JWT__LIFETIMEMINUTES}
+      ExternalServicesURLs__ExchangeRatesApi: ${EXTERNALSERVICESURLS__EXCHANGERATESAPI}
+      ExternalServicesURLs__DirrectoriesServices: ${EXTERNALSERVICESURLS__DIRRECTORIESSERVICES}
+    networks:
+      - homebudget-net
+      - caddy
+    depends_on:
+      - postgres
+    labels:
+      - "caddy=account.homeb.nohat.ru"
+      - "caddy.reverse_proxy={{upstreams 5000}}"
+      - "caddy.encode=zstd gzip"
+
+  frontend:
+    container_name: frontend_HomeBudget
+    build:
+      context: ./Frontend
+      dockerfile: ./Dockerfile
+      args:
+        - VUE_APP_AUTH_URL=${VUE_APP_AUTH_URL}
+        - VUE_APP_DIC_URL=${VUE_APP_DIC_URL}
+        - VUE_APP_ACC_URL=${VUE_APP_ACC_URL}
+    restart: always
+    networks:
+      - homebudget-net
+      - caddy
+    labels:
+      - "caddy=ui.homeb.nohat.ru"
+      - "caddy.reverse_proxy={{upstreams 80}}"
       - "caddy.encode=zstd gzip"

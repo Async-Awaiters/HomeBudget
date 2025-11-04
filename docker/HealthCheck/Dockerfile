@@ -3,7 +3,8 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Клонируем только нужную ветку healthCheck из репозитория
-RUN git clone --branch healthCheck --single-branch https://github.com/Async-Awaiters/HomeBudget.git .
+RUN git clone https://github.com/Async-Awaiters/HomeBudget.git .
+#RUN git clone -b healthCheck https://github.com/Async-Awaiters/HomeBudget.git .
 
 # Публикуем билд
 RUN dotnet publish HomeBudget.HealthCheck/HomeBudget.HealthCheck.csproj -c Release -o /app/publish
