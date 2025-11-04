@@ -96,6 +96,12 @@ public class AccountService : IAccountService
         if (existed is null)
             throw new EntityNotFoundException("Счет не найден.");
 
+        if (account.UserId == Guid.Empty)
+            account.UserId = userId;
+
+        if (account.CurrencyId == Guid.Empty)
+            account.CurrencyId = existed.CurrencyId;
+
         await _accountRepository.UpdateAsync(account, tokenSource.Token);
     }
 
