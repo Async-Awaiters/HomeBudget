@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text.Json;
 using AccountManagement.Models;
 using AccountManagement.TransactionProcessing;
@@ -50,29 +51,39 @@ public class StatisticsReportBuilder : IReportBuilder
         HttpClient client = new HttpClient();
         foreach (var categoryAmount in _categoryAmounts)
         {
-            var response = await client.GetAsync(string.Format(_categoriesURL, categoryAmount.Key));
-            string categoryName;
-
-            // Проверяем статус ответа
-            if (response.IsSuccessStatusCode)
+            try
             {
-                // Получаем содержимое ответа в виде строки
-                var json = await response.Content.ReadAsStringAsync();
+                // Отправляем запрос
+                var url = string.Concat(_categoriesURL, categoryAmount.Key.ToString());
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var response = await client.GetAsync(url);
+                string categoryName;
 
-                // Десериализуем строку в объект
-                categoryName = JsonSerializer.Deserialize<CategoryResponse>(json)?.Name ?? "Unknown";
+                // Проверяем статус ответа
+                if (response.IsSuccessStatusCode)
+                {
+                    // Получаем содержимое ответа в виде строки
+                    var json = await response.Content.ReadAsStringAsync();
+
+                    // Десериализуем строку в объект
+                    categoryName = JsonSerializer.Deserialize<CategoryResponse>(json)?.Name ?? "Unknown";
+                }
+                else
+                {
+                    throw new Exception("Failed to fetch currency rates");
+                }
+
+                report.CategoryReport.Add(new CategoryReportRow
+                {
+                    CategoryId = categoryAmount.Key,
+                    Amount = categoryAmount.Value,
+                    CategoryName = categoryName
+                });
             }
-            else
+            catch (Exception ex)
             {
-                throw new Exception("Failed to fetch currency rates");
+                throw new Exception("Failed to fetch currency rates", ex);
             }
-
-            report.CategoryReport.Add(new CategoryReportRow
-            {
-                CategoryId = categoryAmount.Key,
-                Amount = categoryAmount.Value,
-                CategoryName = categoryName
-            });
         }
 
         return report;

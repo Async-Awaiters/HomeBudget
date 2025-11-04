@@ -35,7 +35,7 @@ namespace AccountManagement.Controllers
         /// <param name="to">Конец периода.</param>
         /// <returns>Список транзакций или код ошибки.</returns>
         [HttpGet]
-        [Route("statistics")]
+        [Route("statistics/{from}/{to}")]
         [EndpointSummary("GetPeriodStatistics")]
         [EndpointDescription("Получает статистику за указанный период.")]
         public async Task<IActionResult> GetAccountTransactionsAsync([FromRoute] DateTime from, [FromRoute] DateTime to)
@@ -77,9 +77,10 @@ namespace AccountManagement.Controllers
                     // Формирование отчёта
                     string token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last() ?? "";
                     var statisticsReport = new StatisticsReportBuilder(reportDataRow,
-                                                     _configuration[""] ?? string.Empty, _currencyConverter);
+                                                     _configuration["ExternalServicesURLs:CategoriesServices"] ?? string.Empty, _currencyConverter);
 
-                    return Ok(statisticsReport.Build(from, to, token));
+                    var report = await statisticsReport.Build(from, to, token);
+                    return Ok(report);
                 });
         }
     }

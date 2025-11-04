@@ -76,18 +76,17 @@ public class TransactionsService : ITransactionsService
     public async Task<List<Transaction>> GetAllAsync(Guid accountId, DateTime? from = null, DateTime? to = null)
     {
         from ??= DateTime.MinValue;
+        var fromDate = from.Value.Date.ToUniversalTime();
         to ??= DateTime.MaxValue;
+        var toDate = to.Value.Date.AddDays(1).ToUniversalTime();
 
         using var tokenSource = new CancellationTokenSource(millisecondsDelay);
+
         // Получение списка транзакций
-        var toDate = to.Value.Date.AddDays(1);
         List<Transaction> transactions = await _transactionsRepository
             .GetAllAsync(accountId)
-            .Where(t => t.Date >= from.Value.Date && t.Date <= toDate)
+            .Where(t => t.Date >= fromDate && t.Date <= toDate)
             .ToListAsync(tokenSource.Token);
-
-        if (!transactions.Any())
-            throw new EntityNotFoundException("Транзакции не найдены.");
 
         return transactions;
     }
