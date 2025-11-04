@@ -140,6 +140,9 @@ public class TransactionsService : ITransactionsService
         if (account is null || userId != account.UserId)
             throw new AccessDeniedException("Доступ запрещён");
 
+        if (transaction.CategoryId == Guid.Empty)
+            transaction.CategoryId = existedTransaction.CategoryId;
+
         // Обновление транзакции
         await _transactionProcessor.UpdateTransaction(transaction, account);
 
