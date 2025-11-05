@@ -70,7 +70,7 @@ public class StatisticsReportBuilder : IReportBuilder
                 }
                 else
                 {
-                    throw new Exception("Failed to fetch currency rates");
+                    throw new Exception("Ошибка при получении категории: CatregoryID = " + categoryAmount.Key);
                 }
 
                 report.CategoryReport.Add(new CategoryReportRow
@@ -82,7 +82,7 @@ public class StatisticsReportBuilder : IReportBuilder
             }
             catch (Exception ex)
             {
-                throw new Exception("Failed to fetch currency rates", ex);
+                throw ex;
             }
         }
 
