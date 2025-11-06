@@ -93,7 +93,7 @@ public class TransactionProcessor : ITransactionProcessor
         using var tokenSource = new CancellationTokenSource(millisecondsDelay);
         var oldTransaction = await _transactionsRepository.GetByIdAsync(transaction.Id, tokenSource.Token);
 
-        if (oldTransaction?.Amount != transaction.Amount)
+        if (oldTransaction?.Amount != transaction.Amount && transaction.Amount < 0)
         {
             var strategy = _transactionStrategyFactory.GetStrategy(account.Type);
 

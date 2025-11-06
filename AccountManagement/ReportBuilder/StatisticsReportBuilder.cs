@@ -7,6 +7,8 @@ namespace AccountManagement.ReportBuilder;
 
 public class StatisticsReportBuilder : IReportBuilder
 {
+    private const string unknownMessage = "Unknown";
+
     private readonly IEnumerable<ReportDataRow> _dataRows;
     private readonly ICurrencyConverter _currencyConverter;
     private readonly string _categoriesURL;
@@ -57,7 +59,7 @@ public class StatisticsReportBuilder : IReportBuilder
                 var url = string.Concat(_categoriesURL, categoryAmount.Key.ToString());
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 var response = await client.GetAsync(url);
-                string categoryName;
+                string categoryName = unknownMessage;
 
                 // Проверяем статус ответа
                 if (response.IsSuccessStatusCode)
@@ -66,11 +68,7 @@ public class StatisticsReportBuilder : IReportBuilder
                     var json = await response.Content.ReadAsStringAsync();
 
                     // Десериализуем строку в объект
-                    categoryName = JsonSerializer.Deserialize<CategoryResponse>(json)?.Name ?? "Unknown";
-                }
-                else
-                {
-                    throw new Exception("Ошибка при получении категории: CatregoryID = " + categoryAmount.Key);
+                    categoryName = JsonSerializer.Deserialize<CategoryResponse>(json)?.Name ?? unknownMessage;
                 }
 
                 report.CategoryReport.Add(new CategoryReportRow
@@ -82,7 +80,7 @@ public class StatisticsReportBuilder : IReportBuilder
             }
             catch (Exception ex)
             {
-                throw ex;
+                // TODO: Добавить логирование
             }
         }
 
