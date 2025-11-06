@@ -143,11 +143,12 @@ public class TransactionsService : ITransactionsService
         if (transaction.CategoryId == Guid.Empty)
             transaction.CategoryId = existedTransaction.CategoryId;
 
+        var diff = transaction.Amount - existedTransaction!.Amount;
+
         // Обновление транзакции
         await _transactionProcessor.UpdateTransaction(transaction, account);
 
         // Обновление баланса счета
-        var diff = existedTransaction!.Amount - transaction.Amount;
         await UpdateAccountBalance(account, diff);
     }
 

@@ -121,7 +121,6 @@ public class AccountRepository : IAccountRepository
         _context.Entry(existingAccount).CurrentValues.SetValues(account);
         _context.Entry(existingAccount).State = EntityState.Modified;
 
-
         await _context.SaveChangesAsync(cancellationToken);
     }
 
